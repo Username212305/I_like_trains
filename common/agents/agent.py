@@ -177,7 +177,7 @@ class Agent(BaseAgent):
                 if self.cur_dir == dict_opposite_dir[directions[0]]: # It's behind us: we have to go back
                     other_directions = [self.cur_dir, None]
                     if self.cur_dir == "up" or self.cur_dir == "down":
-                        directions = ["right","left")]
+                        directions = ["right","left"]
                     else:
                         directions = ["up","down"]
                 else: # We don't change the tuple "directions", as we can go there: just have to change "other_directions"
