@@ -102,25 +102,25 @@ class Agent(BaseAgent):
         # Determining-directions' section:
         if self.our_head[0] - self.target[0] < 0:
             if self.our_head[1] - self.target[1] < 0:
-                return ("right","down")
+                return ["right","down"]
             elif self.our_head[1] - self.target[1] > 0:
-                return ("right","up")
+                return ["right","up"]
             else:                # self.our_head[1] - self.target[1] == 0
-                return ("right",None)
+                return ["right",None]
 
         elif self.our_head[0] - self.target[0] > 0:
             if self.our_head[1] - self.target[1] < 0:
-                return ("left","down")
+                return ["left","down"]
             elif self.our_head[1] - self.target[1] > 0:
-                return ("left","up")
+                return ["left","up"]
             else:
-                return ("left",None)
+                return ["left",None]
         
         else:                     # self.our_head[0] - self.target[0] == 0
             if self.our_head[1] - self.target[1] < 0:
-                return ("down",None)
+                return ["down",None]
             else:                 # self.our_head[1] - self.target[1] > 0
-                return ("up",None)
+                return ["up",None]
         # On ne peut pas avoir 2 None: le code doit etre construit de sorte à ce que lorsqu'on a
         # atteint target, ce dernier s'actualise, et vise un autre point.'''        
 
@@ -166,33 +166,33 @@ class Agent(BaseAgent):
             
             if directions[1]: # != None, means the target is on a diagonal (two directions "wanted")
                 if directions[0] == dict_opposite_dir[self.cur_dir]:
-                    other_directions = (self.cur_dir, dict_opposite_dir[directions[1]]) # Les deux autres directions possibles
-                    directions = (directions[1], None)
+                    other_directions = [self.cur_dir, dict_opposite_dir[directions[1]]] # Les deux autres directions possibles
+                    directions = [directions[1], None]
                 else: # directions[1] == dict_opposite_dir[self.cur_dir]
-                    other_directions = (self.cur_dir, dict_opposite_dir[directions[0]])
-                    directions = (directions[0], None)
+                    other_directions = [self.cur_dir, dict_opposite_dir[directions[0]]]
+                    directions = [directions[0], None]
             
             else: # Two possibilities: the target is next to us, or behind us (both on "strait line")
                 if self.cur_dir == dict_opposite_dir(directions[0]): # It's behind us: we have to go back
-                    other_directions = (self.cur_dir, None)
+                    other_directions = [self.cur_dir, None]
                     if self.cur_dir == "up" or self.cur_dir == "down":
-                        directions = ("right","left")
+                        directions = ["right","left"]
                     else:
-                        directions = ("up","down")
+                        directions = ["up","down"]
                 else: # We don't change the tuple "directions", as we can go there: just have to change "other_directions"
-                    other_directions = (self.cur_dir, dict_opposite_dir(directions[0]))
+                    other_directions = [self.cur_dir, dict_opposite_dir(directions[0])]
         
         else: # Means that we can go in (both) direction(s) and that we are already going the right way
             if directions[1]: # Target on diagonal
                 if self.cur_dir == directions[0]:
-                    other_directions = (dict_opposite_dir[directions[1]], None)
+                    other_directions = [dict_opposite_dir[directions[1]], None]
                 else: # self.cur_dir == directions[1]
-                    other_directions = (dict_opposite_dir[directions[0]], None)
+                    other_directions = [dict_opposite_dir[directions[0]], None]
             else: # If target is not on a diagonal, it means we're rushing toward it
                 if self.cur_dir == "up" or self.cur_dir == "down":
-                    other_directions = ("right","left")
+                    other_directions = ["right","left"]
                 else:
-                    other_directions = ("up","down")
+                    other_directions = ["up","down"]
 
 
         # Partie 2: Danger imminent (pas de return: check "danger potentiel" avant?)
@@ -202,14 +202,14 @@ class Agent(BaseAgent):
             for i in range(2): # First, let's check directions
                 if not directions[i]: # == None
                     continue
-                next_loc = (self.our_head[0] + dict_str_to_values[directions[i]][0], self.our_head[1] + dict_str_to_values[directions[i]][1])
+                next_loc = [self.our_head[0] + dict_str_to_values[directions[i]][0], self.our_head[1] + dict_str_to_values[directions[i]][1]]
                 if next_loc in self.opponent_loc or next_loc in self.our_loc:
                     directions[i] = None
                     # Then we want the other priority direction, or if it doesn't exist, one of other_directions
             for j in range(2): # Now, let's check other_directions
                 if not other_directions[i]: # == None
                     continue
-                next_loc = (self.our_head[0] + dict_str_to_values[other_directions[j]][0], self.our_head[1] + dict_str_to_values[other_directions[j]][1])
+                next_loc = [self.our_head[0] + dict_str_to_values[other_directions[j]][0], self.our_head[1] + dict_str_to_values[other_directions[j]][1]]
                 if next_loc in self.opponent_loc or next_loc in self.our_loc:
                     other_directions[i] = None
                     # Then we want the other priority direction, or if it doesn't exist, one of other_directions
