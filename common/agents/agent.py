@@ -16,7 +16,7 @@ class Agent(BaseAgent):
         """toutes les infos sur notre train, import"""
         self.train = self.all_trains[self.nickname]
         """toutes infos sur l'autre train, import"""
-        self.autre = self.all_trains["Agent1"]
+        self.autre = self.all_trains["Agent1"] # truc à mettre au point
         
         #info sur les passagers
         passagers = self.passengers
