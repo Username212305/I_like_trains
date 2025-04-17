@@ -76,4 +76,7 @@ class Agent(BaseAgent):
                     else:
                         directions = ("up","down")
         
+        moves = [Move.UP, Move.DOWN, Move.LEFT, Move.RIGHT]
+        #return final_choice
+        return random.choice(moves) # Replace this with your own logic
         return dict_str_to_command(directions[0])
