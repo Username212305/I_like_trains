@@ -16,7 +16,7 @@ class Agent(BaseAgent):
         """toutes les infos sur notre train, import"""
         self.train = self.all_trains[self.nickname]
         """toutes infos sur l'autre train, import"""
-        self.autre = self.all_trains["Agent1"]
+        self.autre = self.all_trains["Agent1"] # truc à mettre au point
         
         #info sur les passagers
         passagers = self.passengers
@@ -52,7 +52,7 @@ class Agent(BaseAgent):
                         for y in range(1,znch):
                             for x in range(1,zncl):
                                 zone_loc.append((zone_loc[0][0] + x*20,zone_loc[0][1] + y*20)) # à voir si le dernier cas suffit pas, histoire de faire propre
-        zone_loc_set = set(zone_loc)        
+        zone_loc_set = set(zone_loc)
         """ info sur passagers"""
         passen1_loc = passagers[0]["position"]
         passen1_value = passagers[0]["value"]
@@ -100,28 +100,27 @@ class Agent(BaseAgent):
         
         
         # Determining-directions' section:
-        # TODO Compléter la section ci dessous de sorte à donner les bons output
         if self.our_head[0] - self.target[0] < 0:
             if self.our_head[1] - self.target[1] < 0:
-                return ("","")
+                return ("right","down")
             elif self.our_head[1] - self.target[1] > 0:
-                return ("","")
+                return ("right","up")
             else:                # self.our_head[1] - self.target[1] == 0
-                return ("",None)
+                return ("right",None)
 
         elif self.our_head[0] - self.target[0] > 0:
             if self.our_head[1] - self.target[1] < 0:
-                return ("","")
+                return ("left","down")
             elif self.our_head[1] - self.target[1] > 0:
-                return ("","")
+                return ("left","up")
             else:
-                return ("",None)
+                return ("left",None)
         
         else:                     # self.our_head[0] - self.target[0] == 0
             if self.our_head[1] - self.target[1] < 0:
-                return ("",None)
+                return ("down",None)
             else:                 # self.our_head[1] - self.target[1] > 0
-                return ("",None)
+                return ("up",None)
         # On ne peut pas avoir 2 None: le code doit etre construit de sorte à ce que lorsqu'on a
         # atteint target, ce dernier s'actualise, et vise un autre point.'''        
 
@@ -215,20 +214,21 @@ class Agent(BaseAgent):
                     other_directions[i] = None
                     # Then we want the other priority direction, or if it doesn't exist, one of other_directions
 
-            
+        
         '''Provisoire: ce return est suceptible d'être supprimé, car compris dans la partie 3.'''
         # Final - return part (if no return before)
         if directions[0]: # != None: means there is still a priority direction available
             return dict_str_to_command[directions[0]]
         else: # Emergency: we have to escape in another direction
             return dict_str_to_command[other_directions[0]]
-
+        
 
     def get_move(self):
         """
         This method is regularly called by the client to get the next direction of the train.
         """
-        #final_choice = self.adapt_path(self.main_path()) # Ne retourne rien pour l'instant
+        final_choice = self.adapt_path(self.main_path()) # Ne retourne rien pour l'instant
+        #self.main_path()
         moves = [Move.UP, Move.DOWN, Move.LEFT, Move.RIGHT]
         #return self.cur_dir.turn_right()
         return random.choice(moves)  
