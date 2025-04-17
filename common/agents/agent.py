@@ -7,8 +7,8 @@ class Agent(BaseAgent):
 
     ''' Beginning of the code:
     We define the methods used to decide the move before the method get_move (see bellow).'''
-
-    def main_path(self):
+    def get_move(self):
+    #def main_path(self):
         '''This method will determine the "main strategy": it will decide the next main "target",
         and returns 2 directions (among up, down, left or right) corresponding to the moves the
         train has to do in the future to reach it.'''
@@ -98,36 +98,37 @@ class Agent(BaseAgent):
         else:
             self.target = zone_loc # Prendre le point le plus proche (OU le plus dans le coin) de la liste.
         
-        
+        """ self.main path"""
+        directions=[]
         # Determining-directions' section:
         if self.our_head[0] - self.target[0] < 0:
             if self.our_head[1] - self.target[1] < 0:
-                return ("right","down")
+                directions = ["right","down"]
             elif self.our_head[1] - self.target[1] > 0:
-                return ("right","up")
+                directions = ["right","up"]
             else:                # self.our_head[1] - self.target[1] == 0
-                return ("right",None)
+                directions = ["right",None]
 
         elif self.our_head[0] - self.target[0] > 0:
             if self.our_head[1] - self.target[1] < 0:
-                return ("left","down")
+                directions = ["left","down"]
             elif self.our_head[1] - self.target[1] > 0:
-                return ("left","up")
+                directions = ["left","up"]
             else:
-                return ("left",None)
+                directions = ["left",None]
         
         else:                     # self.our_head[0] - self.target[0] == 0
             if self.our_head[1] - self.target[1] < 0:
-                return ("down",None)
+                directions = ["down",None]
             else:                 # self.our_head[1] - self.target[1] > 0
-                return ("up",None)
+                directions = ["up",None]
         # On ne peut pas avoir 2 None: le code doit etre construit de sorte à ce que lorsqu'on a
         # atteint target, ce dernier s'actualise, et vise un autre point.'''        
 
         # FIN DE MAIN_PATH
 
 
-    def adapt_path(self, directions): 
+    #def adapt_path(self, directions): 
         '''This method is used to change / chose among the directions given by main_path
         if there is a "danger" on the way. It will have the "last word" to decide which
         way to go. Convert the "directions"-2-elements tuple (among "up", "down", "right",
@@ -166,33 +167,33 @@ class Agent(BaseAgent):
             
             if directions[1]: # != None, means the target is on a diagonal (two directions "wanted")
                 if directions[0] == dict_opposite_dir[self.cur_dir]:
-                    other_directions = (self.cur_dir, dict_opposite_dir[directions[1]]) # Les deux autres directions possibles
-                    directions = (directions[1], None)
+                    other_directions = [self.cur_dir, dict_opposite_dir[directions[1]]] # Les deux autres directions possibles
+                    directions = [directions[1], None]
                 else: # directions[1] == dict_opposite_dir[self.cur_dir]
-                    other_directions = (self.cur_dir, dict_opposite_dir[directions[0]])
-                    directions = (directions[0], None)
+                    other_directions = [self.cur_dir, dict_opposite_dir[directions[0]]]
+                    directions = [directions[0], None]
             
             else: # Two possibilities: the target is next to us, or behind us (both on "strait line")
-                if self.cur_dir == dict_opposite_dir(directions[0]): # It's behind us: we have to go back
-                    other_directions = (self.cur_dir, None)
+                if self.cur_dir == dict_opposite_dir[directions[0]]: # It's behind us: we have to go back
+                    other_directions = [self.cur_dir, None]
                     if self.cur_dir == "up" or self.cur_dir == "down":
-                        directions = ("right","left")
+                        directions = ["right","left")]
                     else:
-                        directions = ("up","down")
+                        directions = ["up","down"]
                 else: # We don't change the tuple "directions", as we can go there: just have to change "other_directions"
-                    other_directions = (self.cur_dir, dict_opposite_dir(directions[0]))
+                    other_directions = [self.cur_dir, dict_opposite_dir(directions[0])]
         
         else: # Means that we can go in (both) direction(s) and that we are already going the right way
             if directions[1]: # Target on diagonal
                 if self.cur_dir == directions[0]:
-                    other_directions = (dict_opposite_dir[directions[1]], None)
+                    other_directions = [dict_opposite_dir[directions[1]], None]
                 else: # self.cur_dir == directions[1]
-                    other_directions = (dict_opposite_dir[directions[0]], None)
+                    other_directions = [dict_opposite_dir[directions[0]], None]
             else: # If target is not on a diagonal, it means we're rushing toward it
                 if self.cur_dir == "up" or self.cur_dir == "down":
-                    other_directions = ("right","left")
+                    other_directions = ["right","left"]
                 else:
-                    other_directions = ("up","down")
+                    other_directions = ["up","down"]
 
 
         # Partie 2: Danger imminent (pas de return: check "danger potentiel" avant?)
@@ -202,33 +203,34 @@ class Agent(BaseAgent):
             for i in range(2): # First, let's check directions
                 if not directions[i]: # == None
                     continue
-                next_loc = (self.our_head[0] + dict_str_to_values[directions[i]][0], self.our_head[1] + dict_str_to_values[directions[i]][1])
+                next_loc = [self.our_head[0] + dict_str_to_values[directions[i]][0], self.our_head[1] + dict_str_to_values[directions[i]][1]]
                 if next_loc in self.opponent_loc or next_loc in self.our_loc:
                     directions[i] = None
                     # Then we want the other priority direction, or if it doesn't exist, one of other_directions
             for j in range(2): # Now, let's check other_directions
                 if not other_directions[i]: # == None
                     continue
-                next_loc = (self.our_head[0] + dict_str_to_values[other_directions[j]][0], self.our_head[1] + dict_str_to_values[other_directions[j]][1])
+                next_loc = [self.our_head[0] + dict_str_to_values[other_directions[j]][0], self.our_head[1] + dict_str_to_values[other_directions[j]][1]]
                 if next_loc in self.opponent_loc or next_loc in self.our_loc:
                     other_directions[i] = None
                     # Then we want the other priority direction, or if it doesn't exist, one of other_directions
 
-        
+        """ self.dir """
+        self.dir = 0
         '''Provisoire: ce return est suceptible d'être supprimé, car compris dans la partie 3.'''
         # Final - return part (if no return before)
         if directions[0]: # != None: means there is still a priority direction available
-            return dict_str_to_command[directions[0]]
+            self.dir= dict_str_to_command[directions[0]]
         else: # Emergency: we have to escape in another direction
-            return dict_str_to_command[other_directions[0]]
+            self.dir = dict_str_to_command[other_directions[0]]
         
 
-    def get_move(self):
+    
         """
         This method is regularly called by the client to get the next direction of the train.
         """
-        final_choice = self.adapt_path(self.main_path()) # Ne retourne rien pour l'instant
+        #final_choice = self.adapt_path(self.main_path()) # Ne retourne rien pour l'instant
         #self.main_path()
         moves = [Move.UP, Move.DOWN, Move.LEFT, Move.RIGHT]
-        #return self.cur_dir.turn_right()
+        #return self.dir 
         return random.choice(moves)  
