@@ -214,20 +214,21 @@ class Agent(BaseAgent):
                     other_directions[i] = None
                     # Then we want the other priority direction, or if it doesn't exist, one of other_directions
 
-            
+        
         '''Provisoire: ce return est suceptible d'être supprimé, car compris dans la partie 3.'''
         # Final - return part (if no return before)
         if directions[0]: # != None: means there is still a priority direction available
             return dict_str_to_command[directions[0]]
         else: # Emergency: we have to escape in another direction
             return dict_str_to_command[other_directions[0]]
-
+        
 
     def get_move(self):
         """
         This method is regularly called by the client to get the next direction of the train.
         """
-        #final_choice = self.adapt_path(self.main_path()) # Ne retourne rien pour l'instant
+        final_choice = self.adapt_path(self.main_path()) # Ne retourne rien pour l'instant
+        #self.main_path()
         moves = [Move.UP, Move.DOWN, Move.LEFT, Move.RIGHT]
         #return final_choice
         return random.choice(moves) # Replace this with your own logic
