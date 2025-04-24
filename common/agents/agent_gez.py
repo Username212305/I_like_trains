@@ -17,7 +17,7 @@ class Agent(BaseAgent):
         #toutes les infos sur notre train, import
         self.train = self.all_trains[self.nickname]
         #toutes infos sur l'autre train, import
-        self.autre = self.all_trains["Agent1"]
+        self.autre = self.all_trains["Agent1"] # Il y a une (première?) erreur ICI
         #info sur les passagers
         passagers = self.passengers
 
@@ -76,7 +76,4 @@ class Agent(BaseAgent):
                     else:
                         directions = ("up","down")
         
-        moves = [Move.UP, Move.DOWN, Move.LEFT, Move.RIGHT]
-        #return final_choice
-        return random.choice(moves) # Replace this with your own logic
         return dict_str_to_command(directions[0])

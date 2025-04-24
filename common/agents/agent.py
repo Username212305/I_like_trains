@@ -52,7 +52,6 @@ class Agent(BaseAgent):
                         for y in range(1,znch):
                             for x in range(1,zncl):
                                 zone_loc.append((zone_loc[0][0] + x*20,zone_loc[0][1] + y*20)) # à voir si le dernier cas suffit pas, histoire de faire propre
-        zone_loc_set = set(zone_loc)
         """ info sur passagers"""
         passen1_loc = passagers[0]["position"]
         passen1_value = passagers[0]["value"]
@@ -228,7 +227,4 @@ class Agent(BaseAgent):
         This method is regularly called by the client to get the next direction of the train.
         """
         final_choice = self.adapt_path(self.main_path()) # Ne retourne rien pour l'instant
-        #self.main_path()
-        moves = [Move.UP, Move.DOWN, Move.LEFT, Move.RIGHT]
-        #return final_choice
-        return random.choice(moves) # Replace this with your own logic
+        return final_choice
