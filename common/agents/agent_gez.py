@@ -15,9 +15,10 @@ class Agent(BaseAgent):
         """
         # Variables
         #toutes les infos sur notre train, import
+        #self.logger.debug(self.all_trains)
         self.train = self.all_trains[self.nickname]
         #toutes infos sur l'autre train, import
-        self.autre = self.all_trains["Agent1"]
+        #self.autre = self.all_trains["Agent1"] # Il y a une (première?) erreur ICI
         #info sur les passagers
         passagers = self.passengers
 
@@ -25,8 +26,8 @@ class Agent(BaseAgent):
         zone_loc = self.delivery_zone["position"]
         passenger_loc = passagers[0]["position"]
         length = len(self.train["wagons"])
-        our_head = tuple(self.train["position"])
-        self.cur_dir = Move(self.train["direction"])
+        our_head = (self.train["position"])
+        self.cur_dir = self.train["direction"]
 
         dict_opposite_dir = {"up":"down","right":"left","down":"up","left":"right"}
         dict_str_to_command = {"up":Move.UP, "down":Move.DOWN, "right":Move.RIGHT, "left":Move.LEFT}
@@ -76,6 +77,4 @@ class Agent(BaseAgent):
                     else:
                         directions = ("up","down")
         
-        moves = [Move.UP, Move.DOWN, Move.LEFT, Move.RIGHT]
-        #return final_choice
         return dict_str_to_command(directions[0])
