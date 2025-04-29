@@ -14,11 +14,14 @@ class Agent(BaseAgent):
         Only one method: we basically just look for a passenger, then go to the zone till we have 0 passengers.
         """
         # Variables
-        #toutes les infos sur notre train, import
-        self.logger.debug(self.all_trains)
-        self.train = self.all_trains[self.nickname]
-        #toutes infos sur l'autre train, import
-        self.autre = self.all_trains["Agent1"] # Il y a une (première?) erreur ICI
+        #toutes infos sur les trains, import
+
+        for i in self.all_trains.keys():
+            if i == self.nickname:
+                self.train = self.all_trains[i]
+            else:
+                self.autre = self.all_trains[i]
+
         #info sur les passagers
         passagers = self.passengers
 
@@ -78,36 +81,3 @@ class Agent(BaseAgent):
                         directions = ("up","down")
         
         return dict_str_to_command(directions[0])
-    
-{
-    "client": {
-        "host": "127.0.0.1",
-        "port": 5555,
-        "manual_spawn": false,
-        "game_mode": "observer",
-        "sciper": "392857",
-        "agent": {
-            "nickname": "Agent 47",
-            "agent_file_name": "agent_gez.py"
-        },
-        "manual": {
-            "nickname": "Keyboard"
-        }
-    },
-    "server": {
-        "host": "0.0.0.0",
-        "port": 5555,
-        "nb_clients_per_room": 2,
-        "waiting_time_before_bots_seconds": 1,
-        "agents": [
-            {
-                "nickname": "Random",
-                "agent_file_name": "agent_random.py"
-            },
-            {
-                "nickname": "Gez",
-                "agent_file_name": "agent_gez.py"
-            }
-        ]
-    }
-}
