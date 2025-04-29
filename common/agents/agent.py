@@ -26,7 +26,16 @@ class Agent(BaseAgent):
         # TODO Trouver les path de chacune des variables ci-dessous
         # /!\ Les loc doivent être données tq 1 case == 1 valeur (diviser nbr pixels par la taille des cellules)
         """ infos sur l'autre"""
-        self.opp_cur_dir = Move(tuple(self.autre["direction"])) # Must be precisely "up", "down", "left" or "right"
+        self.opp_cur_dir = (self.autre["direction"]) # Must be precisely "up", "down", "left" or "right"
+        match self.opp_cur_dir:
+            case [1,0]:
+                self.opp_cur_dir = "right"
+            case [-1,0]:
+                self.opp_cur_dir = "left"
+            case [0,1]:
+                self.opp_cur_dir = "down"
+            case [0,-1]:
+                self.opp_cur_dir = "up"
         self.opp_len = int(len(self.autre["wagons"]))
         self.opponent_loc = ...
         self.opponent_head = tuple(self.autre["position"])
@@ -58,7 +67,16 @@ class Agent(BaseAgent):
         passen2_loc = passagers[1]["position"]
         passen2_value = passagers[1]["value"]
         """ Our own attributes"""
-        self.cur_dir = Move(tuple(self.train["direction"])) # Must be precisely "up", "down", "left" or "right"
+        self.cur_dir = self.train["direction"] # Must be precisely "up", "down", "left" or "right"
+        match self.cur_dir:
+            case [1,0]:
+                self.cur_dir = "right"
+            case [-1,0]:
+                self.cur_dir = "left"
+            case [0,1]:
+                self.cur_dir = "down"
+            case [0,-1]:
+                self.cur_dir = "up"
         our_len = int(len(self.train["wagons"]))
         self.our_loc = ...
         self.our_head = tuple(self.train["position"])
@@ -127,7 +145,7 @@ class Agent(BaseAgent):
         # FIN DE MAIN_PATH
 
 
-    #def adapt_path(self, directions): 
+    def adapt_path(self, directions): 
         '''This method is used to change / chose among the directions given by main_path
         if there is a "danger" on the way. It will have the "last word" to decide which
         way to go. Convert the "directions"-2-elements tuple (among "up", "down", "right",
