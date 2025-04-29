@@ -1,6 +1,6 @@
 from common.base_agent import BaseAgent
 from common.move import Move
-import random
+
 
 
 class Agent(BaseAgent):
@@ -23,9 +23,12 @@ class Agent(BaseAgent):
 
         """ Utiles """
         zone_loc = self.delivery_zone["position"]
+        zone_loc =[zone_loc[0]//self.cell_size,zone_loc[1]//self.cell_size]
         passenger_loc = passagers[0]["position"]
+        passenger_loc = [passenger_loc[0]//self.cell_size,passenger_loc[1]//self.cell_size]
         length = len(self.train["wagons"])
         our_head = (self.train["position"])
+        our_head = [our_head[0]//self.cell_size,our_head[1]//self.cell_size]
         self.cur_dir = self.train["direction"]
         match self.cur_dir:
             case [1,0]:
@@ -43,11 +46,9 @@ class Agent(BaseAgent):
         """ Détermination de la cible """
         if length == 0:
             target = passenger_loc
-        elif our_head != zone_loc[0]:
-            target = zone_loc[0]
         else:
-            target = zone_loc[1]
-
+            target = zone_loc
+        print(target)
         """ Détermination des directions idéales """
         if our_head[0] - target[0] < 0:
             if our_head[1] - target[1] < 0:
@@ -68,8 +69,9 @@ class Agent(BaseAgent):
                 ideal_directions = ("down",None)
             else:                 # our_head[1] - target[1] > 0
                 ideal_directions = ("up",None)
-
-        """ Détermination des mouvements """
+                
+        """ Détermination des mouvements """ 
+        
         if self.cur_dir not in ideal_directions: # Means there can be only one of the "good" directions we can go
             
             if ideal_directions[1]: # != None, means the target is on a diagonal (two directions "wanted")
@@ -79,11 +81,17 @@ class Agent(BaseAgent):
                     directions = (ideal_directions[0], None)
             
             else: # Two possibilities: the target is next to us, or behind us (both on "strait line")
-                if self.cur_dir == dict_opposite_dir(ideal_directions[0]): # It's behind us: we have to go back
+                if self.cur_dir == dict_opposite_dir[ideal_directions[0]]: # It's behind us: we have to go back
                     if self.cur_dir == "up" or self.cur_dir == "down":
                         directions = ("right","left")
                     else:
                         directions = ("up","down")
+                else: # It's next to us: 
+                    directions = ideal_directions
+                    
+        else:
+            directions = ideal_directions
+
         print(directions)
         final = dict_str_to_command[directions[0]]
         print(final)
