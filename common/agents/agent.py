@@ -13,10 +13,12 @@ class Agent(BaseAgent):
         and returns 2 directions (among up, down, left or right) corresponding to the moves the
         train has to do in the future to reach it.'''
         
-        """toutes les infos sur notre train, import"""
-        self.train = self.all_trains[self.nickname]
-        """toutes infos sur l'autre train, import"""
-        self.autre = self.all_trains["Agent1"] # truc à mettre au point
+        # Les infos sur les 2 Trains:
+        for i in self.all_trains.keys():
+            if i == self.nickname:
+                self.train = self.all_trains[i]
+            else:
+                self.autre = self.all_trains[i]
         
         #info sur les passagers
         passagers = self.passengers
@@ -63,10 +65,10 @@ class Agent(BaseAgent):
         self.our_loc = ...
         self.our_head = tuple(self.train["position"])
         """# Calculus of the distances ("d")"""
-        d_passen1 = ...
-        d_passen2 = ...
-        d_oppo_passen1 = ...
-        d_oppo_passen2 = ...
+        d_passen1 = (passen1_loc[0] - self.our_head[0], passen1_loc[1] - self.our_head[1])
+        d_passen2 = (passen2_loc[0] - self.our_head[0], passen2_loc[1] - self.our_head[1])
+        d_oppo_passen1 = (passen1_loc[0] - self.opponent_head[0], passen1_loc[1] - self.opponent_head[1])
+        d_oppo_passen2 = (passen2_loc[0] - self.our_head[0], passen2_loc[1] - self.our_head[1])
         d_zone = ...
         # We also create new variables to help us "making choices". It will give to each parameter
         # that can have an importance in our choice a "weight". (here, "c" means "coefficient")
