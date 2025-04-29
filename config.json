@@ -3,7 +3,7 @@
         "host": "127.0.0.1",
         "port": 5555,
         "manual_spawn": false,
-        "game_mode": "observer",
+        "game_mode": "agent",
         "sciper": "392857",
         "agent": {
             "nickname": "Agent 47",
@@ -24,7 +24,7 @@
                 "agent_file_name": "agent_gez.py"
             },
             {
-                "nickname": "Agentesfdqswewf",
+                "nickname": "Agent gez",
                 "agent_file_name": "agent_gez.py"
             }
         ]
