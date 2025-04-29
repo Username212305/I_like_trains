@@ -28,6 +28,15 @@ class Agent(BaseAgent):
         length = len(self.train["wagons"])
         our_head = (self.train["position"])
         self.cur_dir = self.train["direction"]
+        match self.cur_dir:
+            case [1,0]:
+                self.cur_dir = "right"
+            case [-1,0]:
+                self.cur_dir = "left"
+            case [0,1]:
+                self.cur_dir = "down"
+            case [0,-1]:
+                self.cur_dir = "up"
 
         dict_opposite_dir = {"up":"down","right":"left","down":"up","left":"right"}
         dict_str_to_command = {"up":Move.UP, "down":Move.DOWN, "right":Move.RIGHT, "left":Move.LEFT}
@@ -76,5 +85,4 @@ class Agent(BaseAgent):
                         directions = ("right","left")
                     else:
                         directions = ("up","down")
-        
         return dict_str_to_command(directions[0])
