@@ -15,14 +15,13 @@ class Agent(BaseAgent):
         """
         # Variables
         #toutes les infos sur notre train, import
-        #self.logger.debug(self.all_trains)
         self.train = self.all_trains[self.nickname]
         #toutes infos sur l'autre train, import
         #self.autre = self.all_trains["Agent1"] # Il y a une (première?) erreur ICI
-        #info sur les passagers
+        """info sur les passagers"""
         passagers = self.passengers
 
-        # Utiles:
+        """ Utiles """
         zone_loc = self.delivery_zone["position"]
         passenger_loc = passagers[0]["position"]
         length = len(self.train["wagons"])
@@ -41,7 +40,7 @@ class Agent(BaseAgent):
         dict_opposite_dir = {"up":"down","right":"left","down":"up","left":"right"}
         dict_str_to_command = {"up":Move.UP, "down":Move.DOWN, "right":Move.RIGHT, "left":Move.LEFT}
 
-        # Détermination de la cible
+        """ Détermination de la cible """
         if length == 0:
             target = passenger_loc
         elif our_head != zone_loc[0]:
@@ -49,7 +48,7 @@ class Agent(BaseAgent):
         else:
             target = zone_loc[1]
 
-        # Détermination des directions idéales
+        """ Détermination des directions idéales """
         if our_head[0] - target[0] < 0:
             if our_head[1] - target[1] < 0:
                 ideal_directions = ("right","down")
@@ -70,7 +69,7 @@ class Agent(BaseAgent):
             else:                 # our_head[1] - target[1] > 0
                 ideal_directions = ("up",None)
 
-        # Détermination des mouvements
+        """ Détermination des mouvements """
         if self.cur_dir not in ideal_directions: # Means there can be only one of the "good" directions we can go
             
             if ideal_directions[1]: # != None, means the target is on a diagonal (two directions "wanted")
@@ -85,4 +84,7 @@ class Agent(BaseAgent):
                         directions = ("right","left")
                     else:
                         directions = ("up","down")
-        return dict_str_to_command(directions[0])
+        print(directions)
+        final = dict_str_to_command[directions[0]]
+        print(final)
+        return final
