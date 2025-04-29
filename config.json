@@ -20,8 +20,8 @@
         "waiting_time_before_bots_seconds": 1,
         "agents": [
             {
-                "nickname": "Agent 1",
-                "agent_file_name": "agent_gez.py"
+                "nickname": "Agent random",
+                "agent_file_name": "agent_random.py"
             },
             {
                 "nickname": "Agent 2",
