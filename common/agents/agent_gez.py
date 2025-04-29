@@ -1,5 +1,6 @@
 from common.base_agent import BaseAgent
 from common.move import Move
+import random
 
 
 class Agent(BaseAgent):
@@ -41,39 +42,41 @@ class Agent(BaseAgent):
         # Détermination des directions idéales
         if our_head[0] - target[0] < 0:
             if our_head[1] - target[1] < 0:
-                directions = ("right","down")
+                ideal_directions = ("right","down")
             elif our_head[1] - target[1] > 0:
-                directions = ("right","up")
+                ideal_directions = ("right","up")
             else:                # our_head[1] - target[1] == 0
-                directions = ("right",None)
+                ideal_directions = ("right",None)
         elif our_head[0] - target[0] > 0:
             if our_head[1] - target[1] < 0:
-                directions = ("left","down")
+                ideal_directions = ("left","down")
             elif our_head[1] - target[1] > 0:
-                directions = ("left","up")
+                ideal_directions = ("left","up")
             else:
-                directions = ("left",None)
+                ideal_directions = ("left",None)
         else:                     # our_head[0] - target[0] == 0
             if our_head[1] - target[1] < 0:
-                directions = ("down",None)
+                ideal_directions = ("down",None)
             else:                 # our_head[1] - target[1] > 0
-                directions = ("up",None)
+                ideal_directions = ("up",None)
 
-        
         # Détermination des mouvements
-        if self.cur_dir not in directions: # Means there can be only one of the "good" directions we can go
+        if self.cur_dir not in ideal_directions: # Means there can be only one of the "good" directions we can go
             
-            if directions[1]: # != None, means the target is on a diagonal (two directions "wanted")
-                if directions[0] == dict_opposite_dir[self.cur_dir]:
-                    directions = (directions[1], None)
+            if ideal_directions[1]: # != None, means the target is on a diagonal (two directions "wanted")
+                if ideal_directions[0] == dict_opposite_dir[self.cur_dir]:
+                    directions = (ideal_directions[1], None)
                 else: # directions[1] == dict_opposite_dir[self.cur_dir]
-                    directions = (directions[0], None)
+                    directions = (ideal_directions[0], None)
             
             else: # Two possibilities: the target is next to us, or behind us (both on "strait line")
-                if self.cur_dir == dict_opposite_dir(directions[0]): # It's behind us: we have to go back
+                if self.cur_dir == dict_opposite_dir(ideal_directions[0]): # It's behind us: we have to go back
                     if self.cur_dir == "up" or self.cur_dir == "down":
                         directions = ("right","left")
                     else:
                         directions = ("up","down")
-
+        
+        moves = [Move.UP, Move.DOWN, Move.LEFT, Move.RIGHT]
+        #return final_choice
+        return random.choice(moves) # Replace this with your own logic
         return dict_str_to_command(directions[0])

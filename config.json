@@ -6,7 +6,7 @@
         "game_mode": "observer",
         "sciper": "392857",
         "agent": {
-            "nickname": "Player1",
+            "nickname": "Agent 47",
             "agent_file_name": "agent.py"
         },
         "manual": {
@@ -20,11 +20,11 @@
         "waiting_time_before_bots_seconds": 1,
         "agents": [
             {
-                "nickname": "Agent1",
-                "agent_file_name": "agent.py"
+                "nickname": "Agent gez",
+                "agent_file_name": "agent_gez.py"
             },
             {
-                "nickname": "Agent2",
+                "nickname": "Agentesfdqswewf",
                 "agent_file_name": "agent_gez.py"
             }
         ]

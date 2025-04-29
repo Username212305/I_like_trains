@@ -103,6 +103,7 @@ class Agent(BaseAgent):
         # Determining-directions' section:
         if self.our_head[0] - self.target[0] < 0:
             if self.our_head[1] - self.target[1] < 0:
+<<<<<<< HEAD
                 directions = ["right","down"]
             elif self.our_head[1] - self.target[1] > 0:
                 directions = ["right","up"]
@@ -122,6 +123,27 @@ class Agent(BaseAgent):
                 directions = ["down",None]
             else:                 # self.our_head[1] - self.target[1] > 0
                 directions = ["up",None]
+=======
+                return ["right","down"]
+            elif self.our_head[1] - self.target[1] > 0:
+                return ["right","up"]
+            else:                # self.our_head[1] - self.target[1] == 0
+                return ["right",None]
+
+        elif self.our_head[0] - self.target[0] > 0:
+            if self.our_head[1] - self.target[1] < 0:
+                return ["left","down"]
+            elif self.our_head[1] - self.target[1] > 0:
+                return ["left","up"]
+            else:
+                return ["left",None]
+        
+        else:                     # self.our_head[0] - self.target[0] == 0
+            if self.our_head[1] - self.target[1] < 0:
+                return ["down",None]
+            else:                 # self.our_head[1] - self.target[1] > 0
+                return ["up",None]
+>>>>>>> main
         # On ne peut pas avoir 2 None: le code doit etre construit de sorte à ce que lorsqu'on a
         # atteint target, ce dernier s'actualise, et vise un autre point.'''        
 
@@ -174,7 +196,11 @@ class Agent(BaseAgent):
                     directions = [directions[0], None]
             
             else: # Two possibilities: the target is next to us, or behind us (both on "strait line")
+<<<<<<< HEAD
                 if self.cur_dir == dict_opposite_dir[directions[0]]: # It's behind us: we have to go back
+=======
+                if self.cur_dir == dict_opposite_dir(directions[0]): # It's behind us: we have to go back
+>>>>>>> main
                     other_directions = [self.cur_dir, None]
                     if self.cur_dir == "up" or self.cur_dir == "down":
                         directions = ["right","left"]
