@@ -1,7 +1,7 @@
 
 from common.base_agent import BaseAgent
 from common.move import Move
-
+import random
 
 class Agent(BaseAgent):
 
@@ -90,7 +90,7 @@ class Agent(BaseAgent):
         d_passen2 = (passen2_loc[0] - self.our_head[0], passen2_loc[1] - self.our_head[1])
         d_oppo_passen1 = (passen1_loc[0] - self.opponent_head[0], passen1_loc[1] - self.opponent_head[1]) #dist de l'autre train au passager 1
         d_oppo_passen2 = (passen2_loc[0] - self.our_head[0], passen2_loc[1] - self.our_head[1]) # idem passager 2
-        d_zone = (zone_loc[0][0] - self.our_head[0], zone_loc[0][1] - self.our_head[1]) # distance zone de livraison case origine
+        d_zone = (self.zone_loc[0][0] - self.our_head[0], self.zone_loc[0][1] - self.our_head[1]) # distance zone de livraison case origine
         # We also create new variables to help us "making choices". It will give to each parameter
         # that can have an importance in our choice a "weight". (here, "c" means "coefficient")
         # /!\ This part will have to be adapted by experiments ! '''
@@ -104,23 +104,26 @@ class Agent(BaseAgent):
         ''' Beginning of the method: we'll compact the parameters into two variables: one for each
         "target a passenger" choice, and one for the "target zone" choice.
         
-        TODO Il manque une condition "train_in_zone", où il faut adapter le comportement du train.'''
+        TODO Il manque une condition "train_in_zone", où il faut adapter le comportement du train.
+        et vraiment les poids relatifs sont à revoir pour que les passagers soient priorisés si on est vide, plutôt une forme ...-c_len dans le poids des passages ou qqch comme ça'''
         
         """ Deciding section: """
         
         # 2 parameters can affect our choice to target the zone: our current length, and the distance with it.
-        weight_zone = (c_d_zone * d_zone) + (c_len * self.our_len)
+        weight_zone = (c_d_zone * abs(d_zone[0]+d_zone[1])) + (c_len * self.our_len)
         # Three parameters to target a passenger: their distance, value and the distance with the opponent's head.
-        weight_passen1 = (c_d_passen * d_passen1) + (c_passen_val * passen1_value) - (c_d_oppo_passen * d_oppo_passen1)
-        weight_passen2 = (c_d_passen * d_passen2) + (c_passen_val * passen2_value) - (c_d_oppo_passen * d_oppo_passen2)
+        weight_passen1 = (c_d_passen * abs(sum(d_passen1))) + (c_passen_val * passen1_value)# - (c_d_oppo_passen * abs(sum(d_oppo_passen1)))
+        weight_passen2 = (c_d_passen * abs(sum(d_passen2))) + (c_passen_val * passen2_value)# - (c_d_oppo_passen * abs(sum(d_oppo_passen2)))
         if weight_passen1 > weight_passen2:
             if weight_passen1 > weight_zone:
                 self.target = passen1_loc
         elif weight_passen2 > weight_zone:
             self.target = passen2_loc
         else:
-            self.target = zone_loc[0] # Prendre le point le plus proche (OU le plus dans le coin) de la liste.
-        print(self.target)
+            self.target = self.zone_loc[0] # Prendre le point le plus proche (OU le plus dans le coin) de la liste.
+        
+        print("target  " ,self.target)
+        
         """ self.main path"""
         
         """ Détermination des directions idéales """
@@ -145,7 +148,7 @@ class Agent(BaseAgent):
                 ideal_directions = ("up",None)
         # On ne peut pas avoir 2 None: le code doit etre construit de sorte à ce que lorsqu'on a
         # atteint target, ce dernier s'actualise, et vise un autre point.'''        
-        print(ideal_directions)
+        print("ideal_directions  ", ideal_directions)
         # FIN DE MAIN_PATH
     
 
@@ -163,7 +166,7 @@ class Agent(BaseAgent):
 
         - 2 (A COMPLETER): Danger imminent: Evaluer le danger de chacune des direction possible ("directions"
         ET "other_directions") et remplacer par "None" celles qui sont dangereuses.
-        /!\ Cette partie est nécessaire mais pas suffisante: si elle s'active (et élimine une
+        ! Cette partie est nécessaire mais pas suffisante: si elle s'active (et élimine une
         direction dangereuse dans l'immédiat), mais qu'il reste à choisir entre deux directions (même
         si il y en a une prioritaire), il est tout de même important de tester la suite avant de
         prendre une décision;
@@ -186,7 +189,7 @@ class Agent(BaseAgent):
         # mais pas prioritaires (pas de return ici) 
         if self.cur_dir not in ideal_directions: # Means there can be only one of the "good" directions we can go
             
-            if ideal_directions[1]: # != None, means the target is on a diagonal (two directions "wanted")
+            if ideal_directions[1] is not None: # != None, means the target is on a diagonal (two directions "wanted")
                 if ideal_directions[0] == dict_opposite_dir[self.cur_dir]:
                     other_directions = [self.cur_dir, dict_opposite_dir[ideal_directions[1]]] # Les deux autres directions possibles
                     directions = [ideal_directions[1], None]
@@ -195,7 +198,7 @@ class Agent(BaseAgent):
                     directions = [ideal_directions[0], None]
             
             else: # Two possibilities: the target is next to us, or behind us (both on "strait line")
-                if self.cur_dir == dict_opposite_dir(ideal_directions[0]): # It's behind us: we have to go back
+                if self.cur_dir == dict_opposite_dir[ideal_directions[0]]: # It's behind us: we have to go back
                     other_directions = [self.cur_dir, None]
                     if self.cur_dir == "up" or self.cur_dir == "down":
                         directions = ["right","left"]
@@ -203,20 +206,24 @@ class Agent(BaseAgent):
                         directions = ["up","down"]
                 else: # We don't change the tuple "directions", as we can go there: just have to change "other_directions"
                     directions = ideal_directions
-                    other_directions = [self.cur_dir, dict_opposite_dir(ideal_directions[0])]
+                    other_directions = [self.cur_dir, dict_opposite_dir[ideal_directions[0]]]
 
         else: # Means that we can go in (both) direction(s) and that we are already going the right way
             if ideal_directions[1]: # Target on diagonal
+                directions = ideal_directions
                 if self.cur_dir == ideal_directions[0]:
                     other_directions = [dict_opposite_dir[ideal_directions[1]], None]
+                    
                 else: # self.cur_dir == directions[1]
                     other_directions = [dict_opposite_dir[ideal_directions[0]], None]
             else: # If target is not on a diagonal, it means we're rushing toward it
+                directions = [ideal_directions[0], None]    
                 if self.cur_dir == "up" or self.cur_dir == "down":
                     other_directions = ["right","left"]
                 else:
-                    other_directions = ["up","down"]
-            directions = ideal_directions 
+                    other_directions = ["up","down"] 
+        
+        
         #partie 2 ici , elle est rangée plus bas
         """ self.dir """
         self.dir = 0
@@ -227,8 +234,7 @@ class Agent(BaseAgent):
         else: # Emergency: we have to escape in another direction
             self.dir = dict_str_to_command[other_directions[0]]
         
-
-    
+        print("mouvement  ",self.dir)
         """
         This method is regularly called by the client to get the next direction of the train.
         """
