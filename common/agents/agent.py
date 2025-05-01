@@ -32,28 +32,14 @@ class Agent(BaseAgent):
         self.opp_len = int(len(self.autre["wagons"]))
         self.opponent_loc = ...
         self.opponent_head = tuple(self.autre["position"])
-        """ info sur delivery zone"""    
-        zone_loc = [tuple(self.delivery_zone["position"])]
-        znch = self.delivery_zone["height"]//20 #zone_nb_case_haut, combien de cases de haut fait la zone
-        zncl = self.delivery_zone["width"]//20 #zone_nb_case_large, idem de large
-        
-        match znch :
-            case 1:
-                match zncl:
-                    case 1:
-                        print()
-                    case _:
-                        for x in range(1,zncl):
-                            zone_loc.append((zone_loc[0][0]+x*20,zone_loc[0][1]))
-            case _:
-                match zncl:
-                    case 1:
-                        for y in range(1,znch):
-                            zone_loc.append((zone_loc[0][0],zone_loc[0][1]+y*20))
-                    case _:
-                        for y in range(1,znch):
-                            for x in range(1,zncl):
-                                zone_loc.append((zone_loc[0][0] + x*20,zone_loc[0][1] + y*20)) # à voir si le dernier cas suffit pas, histoire de faire propre
+        """ info sur delivery zone"""
+        znch = self.delivery_zone["height"] #zone_nb_case_haut, combien de cases de haut fait la zone
+        zncl = self.delivery_zone["width"] #zone_nb_case_large, idem de large
+        # zone_loc has the coordinates of the four corner points of the zone
+        zone_loc = (self.delivery_zone["position"],
+                    [self.delivery_zone["position"][0],self.delivery_zone["position"][1]+znch]
+                    [self.delivery_zone["position"][0]+zncl,self.delivery_zone["position"][1]+znch],
+                    [self.delivery_zone["position"][0]+zncl,self.delivery_zone["position"][1]])
         """ info sur passagers"""
         passen1_loc = passagers[0]["position"]
         passen1_value = passagers[0]["value"]
@@ -81,23 +67,35 @@ class Agent(BaseAgent):
 
 
         ''' Beginning of the method: we'll compact the parameters into two variables: one for each
-        "target a passenger" choice, and one for the "target zone" choice.
-        
-        TODO Il manque une condition "train_in_zone", où il faut adapter le comportement du train.'''
+        "target a passenger" choice, and one for the "target zone" choice.'''
         
         # Deciding section:
-        # 2 parameters can affect our choice to target the zone: our current length, and the distance with it.
-        weight_zone = (c_d_zone * d_zone) + (c_len * our_len)
-        # Three parameters to target a passenger: their distance, value and the distance with the opponent's head.
-        weight_passen1 = (c_d_passen * d_passen1) + (c_passen_val * passen1_value) - (c_d_oppo_passen * d_oppo_passen1)
-        weight_passen2 = (c_d_passen * d_passen2) + (c_passen_val * passen2_value) - (c_d_oppo_passen * d_oppo_passen2)
-        if weight_passen1 > weight_passen2:
-            if weight_passen1 > weight_zone:
-                self.target = passen1_loc
-        elif weight_passen2 > weight_zone:
-            self.target = passen2_loc
+        # In-zone handler, in case we are in the zone and still need to let passengers:
+        # We call a variable "d" to gain space: its the distance on (x, y) between the point defined
+        # by delivery_zone["position"], and us.
+        d = (self.our_head[0] - self.delivery_zone["position"][0], self.our_loc[1] - self.delivery_zone["position"][1])
+        # This variable is True if the train is in the zone but NOT in a corner (e.t. not in zone_loc)
+        Train_in_middle_zone = True if (d[0] > 0 and d[0]-zncl < 0) and (d[1] > 0 and d[1] - znch < 0) else False
+        if our_len != 0 and (self.our_head in zone_loc or Train_in_middle_zone):
+            for i in zone_loc:
+                if i == self.our_head or i in self.our_loc:
+                    continue
+                self.target = i
+
+        # Determinig next target:  
         else:
-            self.target = zone_loc # Prendre le point le plus proche (OU le plus dans le coin) de la liste.
+            # 2 parameters can affect our choice to target the zone: our current length, and the distance with it.
+            weight_zone = (c_d_zone * d_zone) + (c_len * our_len)
+            # Three parameters to target a passenger: their distance, value and the distance with the opponent's head.
+            weight_passen1 = (c_d_passen * d_passen1) + (c_passen_val * passen1_value) - (c_d_oppo_passen * d_oppo_passen1)
+            weight_passen2 = (c_d_passen * d_passen2) + (c_passen_val * passen2_value) - (c_d_oppo_passen * d_oppo_passen2)
+            if weight_passen1 > weight_passen2:
+                if weight_passen1 > weight_zone:
+                    self.target = passen1_loc
+            elif weight_passen2 > weight_zone:
+                self.target = passen2_loc
+            else:
+                self.target = zone_loc # Prendre le point le plus proche (OU le plus dans le coin) de la liste.
         
         
         # Determining-directions' section:
