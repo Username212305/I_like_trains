@@ -14,13 +14,6 @@ class Agent(BaseAgent):
         Only one method: we basically just look for a passenger, then go to the zone till we have 0 passengers.
         """
         # Variables
-<<<<<<< HEAD
-        #toutes les infos sur notre train, import
-        self.train = self.all_trains[self.nickname]
-        #toutes infos sur l'autre train, import
-        #self.autre = self.all_trains["Agent1"] # Il y a une (première?) erreur ICI
-        """info sur les passagers"""
-=======
         #toutes infos sur les trains, import
 
         for i in self.all_trains.keys():
@@ -30,7 +23,6 @@ class Agent(BaseAgent):
                 self.autre = self.all_trains[i]
 
         #info sur les passagers
->>>>>>> Grandmanitou
         passagers = self.passengers
 
         """ Utiles """
@@ -98,7 +90,6 @@ class Agent(BaseAgent):
                         directions = ("right","left")
                     else:
                         directions = ("up","down")
-<<<<<<< HEAD
                 else: # It's next to us: 
                     directions = ideal_directions
                     
@@ -109,7 +100,3 @@ class Agent(BaseAgent):
         final = dict_str_to_command[directions[0]]
         print(final)
         return final
-=======
-        
-        return dict_str_to_command(directions[0])
->>>>>>> Grandmanitou
