@@ -52,7 +52,7 @@ class Agent(BaseAgent):
             target = passenger_loc
         else:
             target = zone_loc
-        print(target)
+        #print(target)
         """ Détermination des directions idéales """
         if our_head[0] - target[0] < 0:
             if our_head[1] - target[1] < 0:
@@ -96,7 +96,7 @@ class Agent(BaseAgent):
         else:
             directions = ideal_directions
 
-        print(directions)
+        #print(directions)
         final = dict_str_to_command[directions[0]]
-        print(final)
+        #print(final)
         return final
