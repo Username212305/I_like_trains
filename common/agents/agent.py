@@ -1,4 +1,4 @@
-import random
+
 from common.base_agent import BaseAgent
 from common.move import Move
 

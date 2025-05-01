@@ -14,11 +14,15 @@ class Agent(BaseAgent):
         Only one method: we basically just look for a passenger, then go to the zone till we have 0 passengers.
         """
         # Variables
-        #toutes les infos sur notre train, import
-        self.train = self.all_trains[self.nickname]
-        #toutes infos sur l'autre train, import
-        #self.autre = self.all_trains["Agent1"] # Il y a une (première?) erreur ICI
-        """info sur les passagers"""
+        #toutes infos sur les trains, import
+
+        for i in self.all_trains.keys():
+            if i == self.nickname:
+                self.train = self.all_trains[i]
+            else:
+                self.autre = self.all_trains[i]
+
+        #info sur les passagers
         passagers = self.passengers
 
         """ Utiles """
