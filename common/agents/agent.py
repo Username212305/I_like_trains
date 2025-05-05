@@ -1,4 +1,3 @@
-import random
 from common.base_agent import BaseAgent
 from common.move import Move
 
@@ -26,36 +25,55 @@ class Agent(BaseAgent):
         
         # We rename the variables we'll call in the method to simplify the syntax
         # TODO Trouver les path de chacune des variables ci-dessous
-        # /!\ Les loc doivent être données tq 1 case == 1 valeur (diviser nbr pixels par la taille des cellules)
-        """ infos sur l'autre"""
+
+        """ Infos sur l'autre"""
         self.opp_cur_dir = Move(tuple(self.autre["direction"])) # Must be precisely "up", "down", "left" or "right"
         self.opp_len = int(len(self.autre["wagons"]))
         self.opponent_loc = ...
         self.opponent_head = tuple(self.autre["position"])
-        """ info sur delivery zone"""
+
+        """ Infos sur delivery zone"""
         znch = self.delivery_zone["height"] #zone_nb_case_haut, combien de cases de haut fait la zone
         zncl = self.delivery_zone["width"] #zone_nb_case_large, idem de large
-        # zone_loc has the coordinates of the four corner points of the zone
-        zone_loc = (self.delivery_zone["position"],
-                    [self.delivery_zone["position"][0],self.delivery_zone["position"][1]+znch]
-                    [self.delivery_zone["position"][0]+zncl,self.delivery_zone["position"][1]+znch],
-                    [self.delivery_zone["position"][0]+zncl,self.delivery_zone["position"][1]])
-        """ info sur passagers"""
+        # zone_loc has the coordinates of the four (or two!) corner points of the zone. Also define the closest one.
+        if znch == 20:
+            zone_loc = (self.delivery_zone["position"],
+                        [self.delivery_zone["position"][0]+zncl,self.delivery_zone["position"][1]])
+            closest_zone_point = (self.our_head[0] - min(abs(zone_loc[0][0]-self.our_head[0]), abs(zone_loc[1][0]-self.our_head[0])),
+                                  zone_loc[0][1])
+
+        elif zncl == 20:
+            zone_loc = (self.delivery_zone["position"],
+                        [self.delivery_zone["position"][0],self.delivery_zone["position"][1]+znch])
+            closest_zone_point = (zone_loc[0][0],
+                                  self.our_head[1] - min(abs(zone_loc[0][1]-self.our_head[1]), abs(zone_loc[1][1]-self.our_head[1])))
+            
+        else:
+            zone_loc = (self.delivery_zone["position"],
+                        [self.delivery_zone["position"][0],self.delivery_zone["position"][1]+znch]
+                        [self.delivery_zone["position"][0]+zncl,self.delivery_zone["position"][1]+znch],
+                        [self.delivery_zone["position"][0]+zncl,self.delivery_zone["position"][1]])
+            closest_zone_point = (self.our_head[0] - min(abs(zone_loc[0][0]-self.our_head[0]), abs(zone_loc[3][0]-self.our_head[0])),
+                                  self.our_head[1] - min(abs(zone_loc[0][1]-self.our_head[1]), abs(zone_loc[3][1]-self.our_head[1])))
+
+        """ Infos sur passagers"""
         passen1_loc = passagers[0]["position"]
         passen1_value = passagers[0]["value"]
         passen2_loc = passagers[1]["position"]
         passen2_value = passagers[1]["value"]
-        """ Our own attributes"""
+
+        """ Nos attributs"""
         self.cur_dir = Move(tuple(self.train["direction"])) # Must be precisely "up", "down", "left" or "right"
         our_len = int(len(self.train["wagons"]))
         self.our_loc = ...
         self.our_head = tuple(self.train["position"])
-        """# Calculus of the distances ("d")"""
-        d_passen1 = (passen1_loc[0] - self.our_head[0], passen1_loc[1] - self.our_head[1])
-        d_passen2 = (passen2_loc[0] - self.our_head[0], passen2_loc[1] - self.our_head[1])
-        d_oppo_passen1 = (passen1_loc[0] - self.opponent_head[0], passen1_loc[1] - self.opponent_head[1])
-        d_oppo_passen2 = (passen2_loc[0] - self.our_head[0], passen2_loc[1] - self.our_head[1])
-        d_zone = ...
+
+        """ Les distances """
+        d_passen1 = abs(passen1_loc[0] - self.our_head[0] + passen1_loc[1] - self.our_head[1])
+        d_passen2 = abs(passen2_loc[0] - self.our_head[0] + passen2_loc[1] - self.our_head[1])
+        d_oppo_passen1 = abs(passen1_loc[0] - self.opponent_head[0] + passen1_loc[1] - self.opponent_head[1])
+        d_oppo_passen2 = abs(passen2_loc[0] - self.opponent_head[0] + passen2_loc[1] - self.opponent_head[1])
+        d_zone = abs(closest_zone_point[0] - self.our_head[0] + closest_zone_point[1] - self.our_head[1])
         # We also create new variables to help us "making choices". It will give to each parameter
         # that can have an importance in our choice a "weight". (here, "c" means "coefficient")
         # /!\ This part will have to be adapted by experiments ! '''
@@ -71,16 +89,18 @@ class Agent(BaseAgent):
         
         # Deciding section:
         # In-zone handler, in case we are in the zone and still need to let passengers:
-        # We call a variable "d" to gain space: its the distance on (x, y) between the point defined
-        # by delivery_zone["position"], and us.
-        d = (self.our_head[0] - self.delivery_zone["position"][0], self.our_loc[1] - self.delivery_zone["position"][1])
+        # We call a variable "d" to gain space: its the distance on (x, y) between the first corner point
+        # of the zone and us
+        d = (self.our_head[0] - zone_loc[0][0], self.our_loc[1] - zone_loc[0][1])
         # This variable is True if the train is in the zone but NOT in a corner (e.t. not in zone_loc)
         Train_in_middle_zone = True if (d[0] > 0 and d[0]-zncl < 0) and (d[1] > 0 and d[1] - znch < 0) else False
         if our_len != 0 and (self.our_head in zone_loc or Train_in_middle_zone):
             for i in zone_loc:
-                if i == self.our_head or i in self.our_loc:
+                if i == self.our_head or i in self.our_loc or i in self.opponent_loc:
                     continue
                 self.target = i
+            # if all corner points are unavailable:
+            return zone_loc[0]
 
         # Determinig next target:  
         else:
@@ -95,7 +115,7 @@ class Agent(BaseAgent):
             elif weight_passen2 > weight_zone:
                 self.target = passen2_loc
             else:
-                self.target = zone_loc # Prendre le point le plus proche (OU le plus dans le coin) de la liste.
+                self.target = closest_zone_point
         
         
         # Determining-directions' section:
