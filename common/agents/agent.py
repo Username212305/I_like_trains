@@ -13,24 +13,18 @@ class Agent(BaseAgent):
         '''This method will determine the "main strategy": it will decide the next main "target",
         and returns 2 directions (among up, down, left or right) corresponding to the moves the
         train has to do in the future to reach it.'''
+
+        # We rename the variables we'll call in the method to simplify the syntax
         
-        # Les infos sur les 2 Trains:
+        """ Infos sur les 2 Trains """
         for i in self.all_trains.keys():
             if i == self.nickname:
                 self.train = self.all_trains[i]
             else:
                 self.autre = self.all_trains[i]
-        
-        #info sur les passagers
-        passagers = self.passengers
-        
-        
-        # We rename the variables we'll call in the method to simplify the syntax
-        # TODO Trouver les path de chacune des variables ci-dessous
-        # /!\ Les loc doivent être données tq 1 case == 1 valeur (diviser nbr pixels par la taille des cellules)
-        """ infos sur l'autre"""
-        self.opp_cur_dir = (self.autre["direction"]) # Must be precisely "up", "down", "left" or "right"
-        match self.opp_cur_dir:
+
+        """ Infos sur l'autre"""
+        match self.autre["direction"]:
             case [1,0]:
                 self.opp_cur_dir = "right"
             case [-1,0]:
@@ -72,6 +66,7 @@ class Agent(BaseAgent):
         passen1_value = passagers[0]["value"]
         passen2_loc = (passagers[1]["position"][0]//self.cell_size,passagers[1]["position"][1]//self.cell_size)
         passen2_value = passagers[1]["value"]
+
         """ Our own attributes"""
         self.cur_dir = self.train["direction"] # Must be precisely "up", "down", "left" or "right"
         match self.cur_dir:
@@ -112,30 +107,39 @@ class Agent(BaseAgent):
 
 
         ''' Beginning of the method: we'll compact the parameters into two variables: one for each
-        "target a passenger" choice, and one for the "target zone" choice.
+        "target a passenger" choice, and one for the "target zone" choice.'''
         
-        TODO Il manque une condition "train_in_zone", où il faut adapter le comportement du train.
-        et vraiment les poids relatifs sont à revoir pour que les passagers soient priorisés si on est vide, plutôt une forme ...-c_len dans le poids des passages ou qqch comme ça'''
-        
-        """ Deciding section: """
-        
-        # 2 parameters can affect our choice to target the zone: our current length, and the distance with it.
-        weight_zone = (c_d_zone * d_zmin) + (c_len * self.our_len)
-        # Three parameters to target a passenger: their distance, value and the distance with the opponent's head.
-        weight_passen1 = (c_d_passen * d_passen1) + (c_passen_val * passen1_value)# - (c_d_oppo_passen * abs(sum(d_oppo_passen1)))
-        weight_passen2 = (c_d_passen * d_passen2) + (c_passen_val * passen2_value)# - (c_d_oppo_passen * abs(sum(d_oppo_passen2)))
-        if weight_passen1 > weight_passen2:
-            if weight_passen1 > weight_zone:
-                self.target = passen1_loc
-        elif weight_passen2 > weight_zone:
-            self.target = passen2_loc
+        # Deciding section:
+        # In-zone handler, in case we are in the zone and still need to let passengers:
+        # We call a variable "d" to gain space: its the distance on (x, y) between the first corner point
+        # of the zone and us
+        d = (self.our_head[0] - zone_loc[0][0], self.our_loc[1] - zone_loc[0][1])
+        # This variable is True if the train is in the zone but NOT in a corner (e.t. not in zone_loc)
+        Train_in_middle_zone = True if (d[0] > 0 and d[0]-zncl < 0) and (d[1] > 0 and d[1] - znch < 0) else False
+        if self.our_len != 0 and (self.our_head in zone_loc or Train_in_middle_zone):
+            for i in zone_loc:
+                if i == self.our_head or i in self.our_loc or i in self.opponent_loc:
+                    continue
+                self.target = i
+            # if all corner points are unavailable:
+            return zone_loc[0]
+
+        # Determinig next target:  
         else:
-            self.target = self.zone_loc[0] # Prendre le point le plus proche (OU le plus dans le coin) de la liste.
-        
-        print("target  " ,self.target)
-        
-        """ self.main path"""
-        
+            # 2 parameters can affect our choice to target the zone: our current length, and the distance with it.
+            weight_zone = (c_d_zone * d_zone) + (c_len * self.our_len)
+            # Three parameters to target a passenger: their distance, value and the distance with the opponent's head.
+            weight_passen1 = (c_d_passen * d_passen1) + (c_passen_val * passen1_value) - (c_d_oppo_passen * d_oppo_passen1)
+            weight_passen2 = (c_d_passen * d_passen2) + (c_passen_val * passen2_value) - (c_d_oppo_passen * d_oppo_passen2)
+            if weight_passen1 >= weight_passen2:
+                if weight_passen1 >= weight_zone:
+                    self.target = passen1_loc
+            elif weight_passen2 >= weight_zone:
+                self.target = passen2_loc
+            else:
+                self.target = closest_zone_point
+
+
         """ Détermination des directions idéales """
         if self.our_head[0] - self.target[0] < 0:
             if self.our_head[1] - self.target[1] < 0:
@@ -156,20 +160,17 @@ class Agent(BaseAgent):
                 ideal_directions = ("down",None)
             else:                 # our_head[1] - target[1] > 0
                 ideal_directions = ("up",None)
-        # On ne peut pas avoir 2 None: le code doit etre construit de sorte à ce que lorsqu'on a
-        # atteint target, ce dernier s'actualise, et vise un autre point.'''        
-        print("ideal_directions  ", ideal_directions)
+     
+        return ideal_directions
         # FIN DE MAIN_PATH
     
 
-    #def adapt_path(self, ideal_directions): 
+    def adapt_path(self, ideal_directions): 
         '''This method is used to change / chose among the directions given by main_path
         if there is a "danger" on the way. It will have the "last word" to decide which
         way to go. Convert the "directions"-2-elements tuple (among "up", "down", "right",
-        "left" and / or None) into the command of the chosen move.'''
-
-        '''TODO: (dans l'ordre de "priorité" de la méthode)
-
+        "left" and / or None) into the command of the chosen move.
+        
         - 1 (FAIT): Déterminer parmis les deux directions données, si il y en a une "prioritaire" (e.t. si une
         des directions (ou LA direction) donné.e.s est derrière nous, et donc inateignable en 1 action) ET
         déterminer la (les) direction(s) de secour(s) (au cas où les directions souhaitées seraient dangereuses).
@@ -256,19 +257,29 @@ class Agent(BaseAgent):
         # Partie 2: Danger imminent (pas de return: check "danger potentiel" avant?)
         # TODO: Find a way to check if "out-limits", and if we re "rushing toward" the opponent
         # We have to check both directions, starting by the first given by the variable "directions"
-            # The priority direction:            
-            for i in range(2): # First, let's check directions
-                if not directions[i]: # == None
-                    continue
-                next_loc = [self.our_head[0] + dict_str_to_values[directions[i]][0], self.our_head[1] + dict_str_to_values[directions[i]][1]]
-                if next_loc in self.opponent_loc or next_loc in self.our_loc:
-                    directions[i] = None
-                    # Then we want the other priority direction, or if it doesn't exist, one of other_directions
-            for j in range(2): # Now, let's check other_directions
-                if not other_directions[i]: # == None
-                    continue
-                next_loc = [self.our_head[0] + dict_str_to_values[other_directions[j]][0], self.our_head[1] + dict_str_to_values[other_directions[j]][1]]
-                if next_loc in self.opponent_loc or next_loc in self.our_loc:
-                    other_directions[i] = None
-                    # Then we want the other priority direction, or if it doesn't exist, one of other_directions
-"""
+        # The priority direction:            
+        for i in range(2): # First, let's check directions
+            if not directions[i]: # == None
+                continue
+            next_loc = [self.our_head[0] + dict_str_to_values[directions[i]][0], self.our_head[1] + dict_str_to_values[directions[i]][1]]
+            if next_loc in self.opponent_loc or next_loc in self.our_loc:
+                directions[i] = None
+                # Then we want the other priority direction, or if it doesn't exist, one of other_directions
+        for j in range(2): # Now, let's check other_directions
+            if not other_directions[i]: # == None
+                continue
+            next_loc = [self.our_head[0] + dict_str_to_values[other_directions[j]][0], self.our_head[1] + dict_str_to_values[other_directions[j]][1]]
+            if next_loc in self.opponent_loc or next_loc in self.our_loc:
+                other_directions[i] = None
+                # Then we want the other priority direction, or if it doesn't exist, one of other_directions
+
+        # Return part (if no return before)
+        if directions[0]: # != None: means there is still a priority direction available
+            return dict_str_to_command[directions[0]]
+        else: # Emergency: we have to escape in another direction
+            return dict_str_to_command[other_directions[0]]
+        
+
+    def get_move(self):
+
+        return self.adapt_path(self.main_path())
