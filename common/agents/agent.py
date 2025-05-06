@@ -55,7 +55,7 @@ class Agent(BaseAgent):
                         [self.delivery_zone["position"][0]+zncl,self.delivery_zone["position"][1]])
             closest_zone_point = (self.our_head[0] - min(abs(zone_loc[0][0]-self.our_head[0]), abs(zone_loc[3][0]-self.our_head[0])),
                                   self.our_head[1] - min(abs(zone_loc[0][1]-self.our_head[1]), abs(zone_loc[3][1]-self.our_head[1])))
-
+        
         """ Infos sur passagers"""
         passen1_loc = passagers[0]["position"]
         passen1_value = passagers[0]["value"]
