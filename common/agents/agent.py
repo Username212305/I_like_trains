@@ -8,8 +8,8 @@ class Agent(BaseAgent):
 
     ''' Beginning of the code:
     We define the methods used to decide the move before the method get_move (see bellow).'''
-    def get_move(self):
-    #def main_path(self):
+    #def get_move(self):
+    def main_path(self):
         '''This method will determine the "main strategy": it will decide the next main "target",
         and returns 2 directions (among up, down, left or right) corresponding to the moves the
         train has to do in the future to reach it.'''
@@ -62,6 +62,7 @@ class Agent(BaseAgent):
         for i in zone_loc:
             self.zone_loc.append((i[0]//self.cell_size,i[1]//self.cell_size)) 
         """ info sur passagers"""
+        passagers = self.passengers
         passen1_loc = (passagers[0]["position"][0]//self.cell_size,passagers[0]["position"][1]//self.cell_size)
         passen1_value = passagers[0]["value"]
         passen2_loc = (passagers[1]["position"][0]//self.cell_size,passagers[1]["position"][1]//self.cell_size)
@@ -137,7 +138,7 @@ class Agent(BaseAgent):
             elif weight_passen2 >= weight_zone:
                 self.target = passen2_loc
             else:
-                self.target = closest_zone_point
+                self.target = self.zone_min
 
 
         """ Détermination des directions idéales """
