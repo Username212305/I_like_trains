@@ -33,16 +33,16 @@ class Agent(BaseAgent):
         self.opponent_head = tuple(self.autre["position"])
 
         """ Infos sur delivery zone"""
-        znch = self.delivery_zone["height"] #zone_nb_case_haut, combien de cases de haut fait la zone
-        zncl = self.delivery_zone["width"] #zone_nb_case_large, idem de large
+        znch = self.delivery_zone["height"] - 20 #zone_nb_case_haut, combien de cases de haut fait la zone
+        zncl = self.delivery_zone["width"] - 20 #zone_nb_case_large, idem de large
         # zone_loc has the coordinates of the four (or two!) corner points of the zone. Also define the closest one.
-        if znch == 20:
+        if znch == 0:
             zone_loc = (self.delivery_zone["position"],
                         [self.delivery_zone["position"][0]+zncl,self.delivery_zone["position"][1]])
             closest_zone_point = (self.our_head[0] - min(abs(zone_loc[0][0]-self.our_head[0]), abs(zone_loc[1][0]-self.our_head[0])),
                                   zone_loc[0][1])
 
-        elif zncl == 20:
+        elif zncl == 0:
             zone_loc = (self.delivery_zone["position"],
                         [self.delivery_zone["position"][0],self.delivery_zone["position"][1]+znch])
             closest_zone_point = (zone_loc[0][0],
@@ -109,10 +109,10 @@ class Agent(BaseAgent):
             # Three parameters to target a passenger: their distance, value and the distance with the opponent's head.
             weight_passen1 = (c_d_passen * d_passen1) + (c_passen_val * passen1_value) - (c_d_oppo_passen * d_oppo_passen1)
             weight_passen2 = (c_d_passen * d_passen2) + (c_passen_val * passen2_value) - (c_d_oppo_passen * d_oppo_passen2)
-            if weight_passen1 > weight_passen2:
-                if weight_passen1 > weight_zone:
+            if weight_passen1 >= weight_passen2:
+                if weight_passen1 >= weight_zone:
                     self.target = passen1_loc
-            elif weight_passen2 > weight_zone:
+            elif weight_passen2 >= weight_zone:
                 self.target = passen2_loc
             else:
                 self.target = closest_zone_point
