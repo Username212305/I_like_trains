@@ -39,7 +39,7 @@ class Agent(BaseAgent):
             case [0,-1]:
                 self.opp_cur_dir = "up"
         self.opp_len = int(len(self.autre["wagons"]))
-        self.opponent_loc = ...
+        self.opponent_loc = set(self.autre["wagons"])
         self.opponent_head = (self.autre["position"][0]//self.cell_size,self.autre["position"][1]//self.cell_size) 
         """ info sur delivery zone"""    
         zone_loc = [tuple(self.delivery_zone["position"])]
@@ -83,7 +83,7 @@ class Agent(BaseAgent):
             case [0,-1]:
                 self.cur_dir = "up"
         self.our_len = int(len(self.train["wagons"]))
-        self.our_loc = ...
+        self.our_loc = set(self.train["wagons"])
         self.our_head = (self.train["position"][0]//self.cell_size,self.train["position"][1]//self.cell_size)
         """ Les distances """
         d_passen1 = abs(passen1_loc[0] - self.our_head[0] + passen1_loc[1] - self.our_head[1])

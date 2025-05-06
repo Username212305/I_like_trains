@@ -48,7 +48,7 @@ class Agent(BaseAgent):
         dict_str_to_command = {"up":Move.UP, "down":Move.DOWN, "right":Move.RIGHT, "left":Move.LEFT}
 
         """ Détermination de la cible """
-        if length <2:
+        if length <5:
             target = passenger_loc
         else:
             target = zone_loc
