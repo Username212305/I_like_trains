@@ -119,10 +119,10 @@ class Agent(BaseAgent):
         """ Deciding section: """
         
         # 2 parameters can affect our choice to target the zone: our current length, and the distance with it.
-        weight_zone = (c_d_zone * abs(d_zone[0]+d_zone[1])) + (c_len * self.our_len)
+        weight_zone = (c_d_zone * d_zmin) + (c_len * self.our_len)
         # Three parameters to target a passenger: their distance, value and the distance with the opponent's head.
-        weight_passen1 = (c_d_passen * abs(sum(d_passen1))) + (c_passen_val * passen1_value)# - (c_d_oppo_passen * abs(sum(d_oppo_passen1)))
-        weight_passen2 = (c_d_passen * abs(sum(d_passen2))) + (c_passen_val * passen2_value)# - (c_d_oppo_passen * abs(sum(d_oppo_passen2)))
+        weight_passen1 = (c_d_passen * d_passen1) + (c_passen_val * passen1_value)# - (c_d_oppo_passen * abs(sum(d_oppo_passen1)))
+        weight_passen2 = (c_d_passen * d_passen2) + (c_passen_val * passen2_value)# - (c_d_oppo_passen * abs(sum(d_oppo_passen2)))
         if weight_passen1 > weight_passen2:
             if weight_passen1 > weight_zone:
                 self.target = passen1_loc
