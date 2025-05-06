@@ -85,12 +85,21 @@ class Agent(BaseAgent):
         self.our_len = int(len(self.train["wagons"]))
         self.our_loc = ...
         self.our_head = (self.train["position"][0]//self.cell_size,self.train["position"][1]//self.cell_size)
-        """# Calculus of the distances ("d")"""
-        d_passen1 = (passen1_loc[0] - self.our_head[0], passen1_loc[1] - self.our_head[1])
-        d_passen2 = (passen2_loc[0] - self.our_head[0], passen2_loc[1] - self.our_head[1])
-        d_oppo_passen1 = (passen1_loc[0] - self.opponent_head[0], passen1_loc[1] - self.opponent_head[1]) #dist de l'autre train au passager 1
-        d_oppo_passen2 = (passen2_loc[0] - self.our_head[0], passen2_loc[1] - self.our_head[1]) # idem passager 2
-        d_zone = (self.zone_loc[0][0] - self.our_head[0], self.zone_loc[0][1] - self.our_head[1]) # distance zone de livraison case origine
+        """ Les distances """
+        d_passen1 = abs(passen1_loc[0] - self.our_head[0] + passen1_loc[1] - self.our_head[1])
+        d_passen2 = abs(passen2_loc[0] - self.our_head[0] + passen2_loc[1] - self.our_head[1])
+        d_oppo_passen1 = abs(passen1_loc[0] - self.opponent_head[0] + passen1_loc[1] - self.opponent_head[1])
+        d_oppo_passen2 = abs(passen2_loc[0] - self.opponent_head[0] + passen2_loc[1] - self.opponent_head[1])
+        d_zone = abs(self.zone_loc[0][0] - self.our_head[0]) + abs( self.zone_loc[0][1] - self.our_head[1]) # distance zone de livraison case origine
+        print(d_zone)
+        """d_zone elaborée"""
+        d_zmin = d_zone
+        for i,c in enumerate(self.zone_loc):
+            d = abs(c[0] - self.our_head[0]) + abs(c[1] - self.our_head[1])
+            if d < d_zmin:
+                d_zmin = d
+                self.zone_min = self.zone_loc[i] # case de zone la plus proche de nous
+        
         # We also create new variables to help us "making choices". It will give to each parameter
         # that can have an importance in our choice a "weight". (here, "c" means "coefficient")
         # /!\ This part will have to be adapted by experiments ! '''
@@ -152,7 +161,7 @@ class Agent(BaseAgent):
         # FIN DE MAIN_PATH
     
 
-    #def adapt_path(self, directions): 
+    #def adapt_path(self, ideal_directions): 
         '''This method is used to change / chose among the directions given by main_path
         if there is a "danger" on the way. It will have the "last word" to decide which
         way to go. Convert the "directions"-2-elements tuple (among "up", "down", "right",
