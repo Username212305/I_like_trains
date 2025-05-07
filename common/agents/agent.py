@@ -80,8 +80,8 @@ class Agent(BaseAgent):
         self.our_loc = (self.train["wagons"])
         self.our_head = (self.train["position"][0]//self.cell_size , self.train["position"][1]//self.cell_size)
         """ Les distances """
-        d_passen1 = abs(passen1_loc[0] - self.our_head[0] + passen1_loc[1] - self.our_head[1])
-        d_passen2 = abs(passen2_loc[0] - self.our_head[0] + passen2_loc[1] - self.our_head[1])
+        d_passen1 = abs(passen1_loc[0] - self.our_head[0] + passen1_loc[1] - self.our_head[1])+0.000001
+        d_passen2 = abs(passen2_loc[0] - self.our_head[0] + passen2_loc[1] - self.our_head[1])+0.000001
         d_oppo_passen1 = abs(passen1_loc[0] - self.opponent_head[0] + passen1_loc[1] - self.opponent_head[1])
         d_oppo_passen2 = abs(passen2_loc[0] - self.opponent_head[0] + passen2_loc[1] - self.opponent_head[1])
         d_zmin = abs(self.zone_loc[0][0] - self.our_head[0]) + abs(self.zone_loc[0][1] - self.our_head[1]) # distance zone de livraison case origine
@@ -93,6 +93,8 @@ class Agent(BaseAgent):
             if d < d_zmin:
                 d_zmin = d
                 self.zone_min = self.zone_loc[i] # case de zone la plus proche de nous
+        if d_zmin == 0:
+            d_zmin = 0.00001 # éviter division par 0
         # We also create new variables to help us "making choices". It will give to each parameter
         # that can have an importance in our choice a "weight". (here, "c" means "coefficient")
         # /!\ This part will have to be adapted by experiments ! '''
@@ -111,7 +113,7 @@ class Agent(BaseAgent):
         # We call a variable "d" to gain space: its the distance on (x, y) between the first corner point
         # of the zone and us
         d = (self.our_head[0] - self.zone_loc[0][0], self.our_head[1] - self.zone_loc[0][1])
-        # This variable is True if the train is in the zone but NOT in a corner (e.t. not in zone_loc)
+        # This var iable is True if the train is in the zone but NOT in a corner (e.t. not in zone_loc)
         Train_in_middle_zone = True if (d[0] > 0 and d[0]-zncl < 0) and (d[1] > 0 and d[1] - znch < 0) else False
         if self.our_len != 0 and (self.our_head in self.zone_loc or Train_in_middle_zone):
             for i in self.zone_loc:
@@ -214,12 +216,12 @@ class Agent(BaseAgent):
                     else:
                         directions = ["up","down"]
                 else: # We don't change the tuple "directions", as we can go there: just have to change "other_directions"
-                    directions = ideal_directions
+                    directions = list(ideal_directions)
                     other_directions = [self.cur_dir, dict_opposite_dir[ideal_directions[0]]]
 
         else: # Means that we can go in (both) direction(s) and that we are already going the right way
             if ideal_directions[1]: # Target on diagonal
-                directions = ideal_directions
+                directions = list(ideal_directions)
                 if self.cur_dir == ideal_directions[0]:
                     other_directions = [dict_opposite_dir[ideal_directions[1]], None]
                     
@@ -246,7 +248,7 @@ class Agent(BaseAgent):
         for j in range(2): # Now, let's check other_directions
             if not other_directions[i]: # == None
                 continue
-            next_loc = [self.our_head[0] + dict_str_to_values[other_directions[j]][0]*20, self.our_head[1] + dict_str_to_values[other_directions[j]][1]*20]
+            next_loc = [(self.our_head[0] + dict_str_to_values[other_directions[j]][0])*20, (self.our_head[1] + dict_str_to_values[other_directions[j]][1])*20]
             if next_loc in self.opponent_loc or next_loc in self.our_loc:
                 other_directions[i] = None
                 # Then we want the other priority direction, or if it doesn't exist, one of other_directions
