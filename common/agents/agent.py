@@ -7,8 +7,8 @@ class Agent(BaseAgent):
 
     ''' Beginning of the code:
     We define the methods used to decide the move before the method get_move (see bellow).'''
-    def get_move(self):
-    #def main_path(self):
+    #def get_move(self):
+    def main_path(self):
         '''This method will determine the "main strategy": it will decide the next main "target",
         and returns 2 directions (among up, down, left or right) corresponding to the moves the
         train has to do in the future to reach it.'''
@@ -169,7 +169,7 @@ class Agent(BaseAgent):
         # FIN DE MAIN_PATH
     
 
-    #def adapt_path(self, ideal_directions): 
+    def adapt_path(self, ideal_directions): 
         '''This method is used to change / chose among the directions given by main_path
         if there is a "danger" on the way. It will have the "last word" to decide which
         way to go. Convert the "directions"-2-elements tuple (among "up", "down", "right",
@@ -240,27 +240,7 @@ class Agent(BaseAgent):
                 else:
                     other_directions = ["up","down"] 
         
-        
-        #partie 2 ici , elle est rangée plus bas
-        """ self.dir """
-        self.dir = 0
-        '''Provisoire: ce return est suceptible d'être supprimé, car compris dans la partie 3.'''
-        # Final - return part (if no return before)
-        if directions[0]: # != None: means there is still a priority direction available
-            self.dir= dict_str_to_command[directions[0]]
-        else: # Emergency: we have to escape in another direction
-            self.dir = dict_str_to_command[other_directions[0]]
-        
-        print("mouvement  ",self.dir)
-        """
-        This method is regularly called by the client to get the next direction of the train.
-        """
-        
-        #final_choice = self.adapt_path(self.main_path()) # Ne retourne rien pour l'instant
-        return self.dir
-    
-    """
-        # Partie 2: Danger imminent (pas de return: check "danger potentiel" avant?)
+                # Partie 2: Danger imminent (pas de return: check "danger potentiel" avant?)
         # TODO: Find a way to check if "out-limits", and if we re "rushing toward" the opponent
         # We have to check both directions, starting by the first given by the variable "directions"
         # The priority direction: 
@@ -289,3 +269,4 @@ class Agent(BaseAgent):
     def get_move(self):
 
         return self.adapt_path(self.main_path())
+        
