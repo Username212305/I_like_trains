@@ -2,7 +2,6 @@ from common.base_agent import BaseAgent
 from common.move import Move
 
 
-
 class Agent(BaseAgent):
 
     ''' Beginning of the code:
@@ -14,6 +13,14 @@ class Agent(BaseAgent):
         Only one method: we basically just look for a passenger, then go to the zone till we have 0 passengers.
         """
         # Variables
+        #toutes infos sur les trains, import
+
+        for i in self.all_trains.keys():
+            if i == self.nickname:
+                self.train = self.all_trains[i]
+            else:
+                self.autre = self.all_trains[i]
+
         #toutes infos sur les trains, import
 
         for i in self.all_trains.keys():

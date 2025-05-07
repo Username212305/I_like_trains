@@ -1,4 +1,5 @@
 
+
 from common.base_agent import BaseAgent
 from common.move import Move
 import random
@@ -12,24 +13,18 @@ class Agent(BaseAgent):
         '''This method will determine the "main strategy": it will decide the next main "target",
         and returns 2 directions (among up, down, left or right) corresponding to the moves the
         train has to do in the future to reach it.'''
+
+        # We rename the variables we'll call in the method to simplify the syntax
         
-        # Les infos sur les 2 Trains:
+        """ Infos sur les 2 Trains """
         for i in self.all_trains.keys():
             if i == self.nickname:
                 self.train = self.all_trains[i]
             else:
                 self.autre = self.all_trains[i]
-        
-        #info sur les passagers
-        passagers = self.passengers
-        
-        
-        # We rename the variables we'll call in the method to simplify the syntax
-        # TODO Trouver les path de chacune des variables ci-dessous
-        # /!\ Les loc doivent être données tq 1 case == 1 valeur (diviser nbr pixels par la taille des cellules)
-        """ infos sur l'autre"""
-        self.opp_cur_dir = (self.autre["direction"]) # Must be precisely "up", "down", "left" or "right"
-        match self.opp_cur_dir:
+
+        """ Infos sur l'autre"""
+        match self.autre["direction"]:
             case [1,0]:
                 self.opp_cur_dir = "right"
             case [-1,0]:
@@ -64,10 +59,12 @@ class Agent(BaseAgent):
                             for x in range(1,zncl):
                                 self.zone_loc.append((self.zone_loc[0][0] + x,self.zone_loc[0][1] + y)) # à voir si le dernier cas suffit pas, histoire de faire propre
         """ info sur passagers"""
+        passagers = self.passengers
         passen1_loc = (passagers[0]["position"][0]//self.cell_size,passagers[0]["position"][1]//self.cell_size)
         passen1_value = passagers[0]["value"]
         passen2_loc = (passagers[1]["position"][0]//self.cell_size,passagers[1]["position"][1]//self.cell_size)
         passen2_value = passagers[1]["value"]
+
         """ Our own attributes"""
         self.cur_dir = self.train["direction"] # Must be precisely "up", "down", "left" or "right"
         match self.cur_dir:
@@ -163,9 +160,8 @@ class Agent(BaseAgent):
                 ideal_directions = ("down",None)
             else:                 # our_head[1] - target[1] > 0
                 ideal_directions = ("up",None)
-        # On ne peut pas avoir 2 None: le code doit etre construit de sorte à ce que lorsqu'on a
-        # atteint target, ce dernier s'actualise, et vise un autre point.'''        
-        print("ideal_directions  ", ideal_directions)
+     
+        return ideal_directions
         # FIN DE MAIN_PATH
     
 
@@ -173,10 +169,8 @@ class Agent(BaseAgent):
         '''This method is used to change / chose among the directions given by main_path
         if there is a "danger" on the way. It will have the "last word" to decide which
         way to go. Convert the "directions"-2-elements tuple (among "up", "down", "right",
-        "left" and / or None) into the command of the chosen move.'''
-
-        '''TODO: (dans l'ordre de "priorité" de la méthode)
-
+        "left" and / or None) into the command of the chosen move.
+        
         - 1 (FAIT): Déterminer parmis les deux directions données, si il y en a une "prioritaire" (e.t. si une
         des directions (ou LA direction) donné.e.s est derrière nous, et donc inateignable en 1 action) ET
         déterminer la (les) direction(s) de secour(s) (au cas où les directions souhaitées seraient dangereuses).
@@ -240,7 +234,7 @@ class Agent(BaseAgent):
                 else:
                     other_directions = ["up","down"] 
         
-                # Partie 2: Danger imminent (pas de return: check "danger potentiel" avant?)
+        # Partie 2: Danger imminent (pas de return: check "danger potentiel" avant?)
         # TODO: Find a way to check if "out-limits", and if we re "rushing toward" the opponent
         # We have to check both directions, starting by the first given by the variable "directions"
         # The priority direction: 
@@ -269,4 +263,3 @@ class Agent(BaseAgent):
     def get_move(self):
 
         return self.adapt_path(self.main_path())
-        
