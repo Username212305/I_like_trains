@@ -84,17 +84,15 @@ class Agent(BaseAgent):
         d_passen2 = abs(passen2_loc[0] - self.our_head[0] + passen2_loc[1] - self.our_head[1])
         d_oppo_passen1 = abs(passen1_loc[0] - self.opponent_head[0] + passen1_loc[1] - self.opponent_head[1])
         d_oppo_passen2 = abs(passen2_loc[0] - self.opponent_head[0] + passen2_loc[1] - self.opponent_head[1])
-        d_zone = abs(self.zone_loc[0][0] - self.our_head[0] + self.zone_loc[0][1] - self.our_head[1]) # distance zone de livraison case origine
+        d_zmin = abs(self.zone_loc[0][0] - self.our_head[0]) + abs(self.zone_loc[0][1] - self.our_head[1]) # distance zone de livraison case origine
 
         """d_zone elaborée"""
-        d_zmin = d_zone
         self.zone_min = self.zone_loc[0] # zone la plus proche de nous (initialement, c'est la zone d'origine)
         for i,c in enumerate(self.zone_loc):
             d = abs(c[0] - self.our_head[0]) + abs(c[1] - self.our_head[1])
             if d < d_zmin:
                 d_zmin = d
                 self.zone_min = self.zone_loc[i] # case de zone la plus proche de nous
-        
         # We also create new variables to help us "making choices". It will give to each parameter
         # that can have an importance in our choice a "weight". (here, "c" means "coefficient")
         # /!\ This part will have to be adapted by experiments ! '''
