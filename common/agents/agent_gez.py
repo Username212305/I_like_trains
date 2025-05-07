@@ -14,15 +14,6 @@ class Agent(BaseAgent):
         """
         # Variables
         #toutes infos sur les trains, import
-
-        for i in self.all_trains.keys():
-            if i == self.nickname:
-                self.train = self.all_trains[i]
-            else:
-                self.autre = self.all_trains[i]
-
-        #toutes infos sur les trains, import
-
         for i in self.all_trains.keys():
             if i == self.nickname:
                 self.train = self.all_trains[i]
