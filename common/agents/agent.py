@@ -166,6 +166,7 @@ class Agent(BaseAgent):
         # FIN DE MAIN_PATH
     
 
+
     def adapt_path(self, ideal_directions): 
         '''This method is used to change / chose among the directions given by main_path
         if there is a "danger" on the way. It will have the "last word" to decide which
