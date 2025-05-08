@@ -105,27 +105,26 @@ class Agent(BaseAgent):
         c_d_oppo_passen = 0.5
 
 
-        ''' Beginning of the method: we'll compact the parameters into two variables: one for each
-        "target a passenger" choice, and one for the "target zone" choice.'''
-        
-        # Deciding section:
-        # In-zone handler, in case we are in the zone and still need to let passengers:
-        # We call a variable "d" to gain space: its the distance on (x, y) between the first corner point
-        # of the zone and us
-        d = (self.our_head[0] - self.zone_loc[0][0], self.our_head[1] - self.zone_loc[0][1])
-        # This var iable is True if the train is in the zone but NOT in a corner (e.t. not in zone_loc)
-        Train_in_middle_zone = True if (d[0] > 0 and d[0]-zncl < 0) and (d[1] > 0 and d[1] - znch < 0) else False
-        if self.our_len != 0 and (self.our_head in self.zone_loc or Train_in_middle_zone):
-            for i in self.zone_loc:
-                if i == self.our_head or i in self.our_loc or i in self.opponent_loc:
-                    continue
-                self.target = i
-            # if all corner points are unavailable:
-            self.target = self.zone_loc[0]
+            ''' Beginning of the method: we'll compact the parameters into two variables: one for each
+            "target a passenger" choice, and one for the "target zone" choice.'''
+            
+            # Deciding section:
+            # In-zone handler, in case we are in the zone and still need to let passengers:
+            # We call a variable "d" to gain space: its the distance on (x, y) between the first corner point
+            # of the zone and us
+            self.target = None
+            if self.our_len != 0 and self.our_head in self.zone_loc:
+                for i in self.zone_loc:
+                    if i == self.our_head or i in self.our_loc or i in self.opponent_loc:
+                        continue
+                    self.target = list(i)
+                    break
+                if not self.target: # Si toutes les cases de zone sont occupées
+                    self.target = self.zone_loc[0]
 
             # Determinig next target:
             else:
-                weight_zone = (c_len * self.our_len)**1.5 / (c_d_zone * d_zmin) if self.our_len != 0 else -100000
+                weight_zone = (c_len * self.our_len)**1.5 / (c_d_zone * d_zone) if self.our_len != 0 else -100000
                 # Three parameters to target a passenger: their distance, value and the distance with the opponent's head.
                 weight_passen1 = (c_passen_val * passen1_value) / (c_d_passen * d_passen1) if d_passen1 != 0 else -100000 #- (c_d_oppo_passen * d_oppo_passen1)**2
                 weight_passen2 = (c_passen_val * passen2_value) / (c_d_passen * d_passen2) if d_passen2 != 0 else -100000 #- (c_d_oppo_passen * d_oppo_passen2)**2
