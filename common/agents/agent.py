@@ -35,7 +35,7 @@ class Agent(BaseAgent):
             self.opp_len = len(self.autre["wagons"])
             self.opponent_loc = [[i[0]//self.cell_size, i[1]//self.cell_size] for i in self.autre["wagons"]]
             self.opponent_head = (self.autre["position"][0]//self.cell_size,self.autre["position"][1]//self.cell_size)
-            self.aura = [[self.opponent_head[0] + x, self.opponent_head[1] + y] for x in range(-1,2) for y in range(-1,2)]
+            self.aura = [[self.opponent_head[0] + x, self.opponent_head[1] + y] for x in range(-2,3) for y in range(-2,3)]
 
             """ info sur delivery zone"""
             self.zone_loc = [(self.delivery_zone["position"][0]//self.cell_size , self.delivery_zone["position"][1]//self.cell_size)] # zone_loc = [x,y] case de la zone de livraison
@@ -85,15 +85,12 @@ class Agent(BaseAgent):
             d_passen2 = abs(passen2_loc[0] - self.our_head[0]) + abs(passen2_loc[1] - self.our_head[1])
             d_oppo_passen1 = abs(passen1_loc[0] - self.opponent_head[0]) + abs(passen1_loc[1] - self.opponent_head[1])
             d_oppo_passen2 = abs(passen2_loc[0] - self.opponent_head[0]) + abs(passen2_loc[1] - self.opponent_head[1])
-            d_zone = abs(self.zone_loc[0][0] - self.our_head[0]) + abs(self.zone_loc[0][1] - self.our_head[1]) # distance zone de livraison case origine
-
-            """d_zone elaborée"""
-            d_zmin = d_zone
+            d_zone = 50 # Valeur arbitraire, théoriquement plus grande que n'importe quelle distance
             self.zone_min = self.zone_loc[0] # zone la plus proche de nous (initialement, c'est la zone d'origine)
             for i,c in enumerate(self.zone_loc):
                 d = abs(c[0] - self.our_head[0]) + abs(c[1] - self.our_head[1])
-                if d < d_zmin:
-                    d_zmin = d
+                if d < d_zone:
+                    d_zone = d
                     self.zone_min = self.zone_loc[i] # case de zone la plus proche de nous
             
             # We also create new variables to help us "making choices". It will give to each parameter
@@ -113,18 +110,19 @@ class Agent(BaseAgent):
             # In-zone handler, in case we are in the zone and still need to let passengers:
             # We call a variable "d" to gain space: its the distance on (x, y) between the first corner point
             # of the zone and us
-
+            self.target = None
             if self.our_len != 0 and self.our_head in self.zone_loc:
                 for i in self.zone_loc:
                     if i == self.our_head or i in self.our_loc or i in self.opponent_loc:
                         continue
                     self.target = list(i)
-                # if all corner points are unavailable:
-                self.target = list(self.zone_loc[0])
+                    break
+                if not self.target: # Si toutes les cases de zone sont occupées
+                    self.target = self.zone_loc[0]
 
             # Determinig next target:
             else:
-                weight_zone = (c_len * self.our_len)**1.5 / (c_d_zone * d_zmin) if self.our_len != 0 else -100000
+                weight_zone = (c_len * self.our_len)**1.5 / (c_d_zone * d_zone) if self.our_len != 0 else -100000
                 # Three parameters to target a passenger: their distance, value and the distance with the opponent's head.
                 weight_passen1 = (c_passen_val * passen1_value) / (c_d_passen * d_passen1) if d_passen1 != 0 else -100000 #- (c_d_oppo_passen * d_oppo_passen1)**2
                 weight_passen2 = (c_passen_val * passen2_value) / (c_d_passen * d_passen2) if d_passen2 != 0 else -100000 #- (c_d_oppo_passen * d_oppo_passen2)**2
