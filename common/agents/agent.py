@@ -1,14 +1,12 @@
-
-
 from common.base_agent import BaseAgent
 from common.move import Move
-import random
+
 
 class Agent(BaseAgent):
 
     ''' Beginning of the code:
     We define the methods used to decide the move before the method get_move (see bellow).'''
-    #def get_move(self):
+
     def main_path(self):
         try:
             '''This method will determine the "main strategy": it will decide the next main "target",
@@ -34,13 +32,15 @@ class Agent(BaseAgent):
                     self.opp_cur_dir = "down"
                 case [0,-1]:
                     self.opp_cur_dir = "up"
-            self.opp_len = int(len(self.autre["wagons"]))
-            self.opponent_loc = (self.autre["wagons"])
-            self.opponent_head = (self.autre["position"][0]//self.cell_size,self.autre["position"][1]//self.cell_size) 
-            """ info sur delivery zone"""    
+            self.opp_len = len(self.autre["wagons"])
+            self.opponent_loc = [[i[0]//self.cell_size, i[1]//self.cell_size] for i in self.autre["wagons"]]
+            self.opponent_head = (self.autre["position"][0]//self.cell_size,self.autre["position"][1]//self.cell_size)
+            self.aura = [[self.opponent_head[0] + x, self.opponent_head[1] + y] for x in range(-1,2) for y in range(-1,2)]
+
+            """ info sur delivery zone"""
             self.zone_loc = [(self.delivery_zone["position"][0]//self.cell_size , self.delivery_zone["position"][1]//self.cell_size)] # zone_loc = [x,y] case de la zone de livraison
-            znch = self.delivery_zone["height"]//20 #zone_nb_case_haut, combien de cases de haut fait la zone
-            zncl = self.delivery_zone["width"]//20 #zone_nb_case_large, idem de large
+            znch = self.delivery_zone["height"]//self.cell_size # zone_nb_case_haut
+            zncl = self.delivery_zone["width"]//self.cell_size # zone_nb_case_large
             
             match znch :
                 case 1:
@@ -61,14 +61,13 @@ class Agent(BaseAgent):
                                     self.zone_loc.append((self.zone_loc[0][0] + x,self.zone_loc[0][1] + y)) # à voir si le dernier cas suffit pas, histoire de faire propre
             """ info sur passagers"""
             passagers = self.passengers
-            passen1_loc = (passagers[0]["position"][0]//self.cell_size,passagers[0]["position"][1]//self.cell_size)
+            passen1_loc = (passagers[0]["position"][0]//self.cell_size, passagers[0]["position"][1]//self.cell_size)
             passen1_value = passagers[0]["value"]
-            passen2_loc = (passagers[1]["position"][0]//self.cell_size,passagers[1]["position"][1]//self.cell_size)
+            passen2_loc = (passagers[1]["position"][0]//self.cell_size, passagers[1]["position"][1]//self.cell_size)
             passen2_value = passagers[1]["value"]
 
             """ Our own attributes"""
-            self.cur_dir = self.train["direction"] # Must be precisely "up", "down", "left" or "right"
-            match self.cur_dir:
+            match self.train["direction"]:
                 case [1,0]:
                     self.cur_dir = "right"
                 case [-1,0]:
@@ -78,13 +77,14 @@ class Agent(BaseAgent):
                 case [0,-1]:
                     self.cur_dir = "up"
             self.our_len = int(len(self.train["wagons"]))
-            self.our_loc = (self.train["wagons"])
+            self.our_loc = [[i[0]//self.cell_size, i[1]//self.cell_size] for i in self.train["wagons"]]
             self.our_head = (self.train["position"][0]//self.cell_size , self.train["position"][1]//self.cell_size)
+
             """ Les distances """
-            d_passen1 = abs(passen1_loc[0] - self.our_head[0] + passen1_loc[1] - self.our_head[1]) + 0.01
-            d_passen2 = abs(passen2_loc[0] - self.our_head[0] + passen2_loc[1] - self.our_head[1]) + 0.01
-            d_oppo_passen1 = abs(passen1_loc[0] - self.opponent_head[0] + passen1_loc[1] - self.opponent_head[1])
-            d_oppo_passen2 = abs(passen2_loc[0] - self.opponent_head[0] + passen2_loc[1] - self.opponent_head[1])
+            d_passen1 = abs(passen1_loc[0] - self.our_head[0]) + abs(passen1_loc[1] - self.our_head[1])
+            d_passen2 = abs(passen2_loc[0] - self.our_head[0]) + abs(passen2_loc[1] - self.our_head[1])
+            d_oppo_passen1 = abs(passen1_loc[0] - self.opponent_head[0]) + abs(passen1_loc[1] - self.opponent_head[1])
+            d_oppo_passen2 = abs(passen2_loc[0] - self.opponent_head[0]) + abs(passen2_loc[1] - self.opponent_head[1])
             d_zone = abs(self.zone_loc[0][0] - self.our_head[0]) + abs(self.zone_loc[0][1] - self.our_head[1]) # distance zone de livraison case origine
 
             """d_zone elaborée"""
@@ -99,7 +99,7 @@ class Agent(BaseAgent):
             # We also create new variables to help us "making choices". It will give to each parameter
             # that can have an importance in our choice a "weight". (here, "c" means "coefficient")
             # /!\ This part will have to be adapted by experiments ! '''
-            c_len = 5
+            c_len = 9
             c_passen_val = 10
             c_d_zone = 3
             c_d_passen = 3
@@ -124,10 +124,10 @@ class Agent(BaseAgent):
 
             # Determinig next target:
             else:
-                weight_zone = (c_len * self.our_len) / (c_d_zone * d_zmin) if self.our_len != 0 else -100000
+                weight_zone = (c_len * self.our_len)**1.5 / (c_d_zone * d_zmin) if self.our_len != 0 else -100000
                 # Three parameters to target a passenger: their distance, value and the distance with the opponent's head.
-                weight_passen1 = (c_passen_val * passen1_value) / (c_d_passen * d_passen1) #- (c_d_oppo_passen * d_oppo_passen1)**2
-                weight_passen2 = (c_passen_val * passen2_value) / (c_d_passen * d_passen2) #- (c_d_oppo_passen * d_oppo_passen2)**2
+                weight_passen1 = (c_passen_val * passen1_value) / (c_d_passen * d_passen1) if d_passen1 != 0 else -100000 #- (c_d_oppo_passen * d_oppo_passen1)**2
+                weight_passen2 = (c_passen_val * passen2_value) / (c_d_passen * d_passen2) if d_passen2 != 0 else -100000 #- (c_d_oppo_passen * d_oppo_passen2)**2
                 if weight_passen1 >= weight_passen2:
                     if weight_passen1 >= weight_zone:
                         self.target = passen1_loc
@@ -137,7 +137,7 @@ class Agent(BaseAgent):
                     self.target = passen2_loc
                 else:
                     self.target = self.zone_min
-            print(self.target)
+            print(self.target, d_passen2, d_passen1)
 
             """ Détermination des directions idéales """
             if self.our_head[0] - self.target[0] < 0:
@@ -163,8 +163,6 @@ class Agent(BaseAgent):
             return ideal_directions
             # FIN DE MAIN_PATH
         except ZeroDivisionError:
-            print()
-        except:
             print()
     
 
@@ -241,19 +239,26 @@ class Agent(BaseAgent):
             # Partie 2: Danger imminent (pas de return: check "danger potentiel" avant?)
             # TODO: Find a way to check if "out-limits", and if we re "rushing toward" the opponent
             # We have to check both directions, starting by the first given by the variable "directions"
-            # The priority direction: 
+            # The priority direction:
+            def out_of_bounds(coordinates):
+                if coordinates[0] > 21 or coordinates[0] < 0:
+                    return True
+                if coordinates[1] > 21 or coordinates[1] < 0:
+                    return True
+                return False
+            
             for i in range(2): # First, let's check directions
                 if not directions[i]: # == None
                     continue
-                next_loc = [(self.our_head[0] + dict_str_to_values[directions[i]][0])*20, (self.our_head[1] + dict_str_to_values[directions[i]][1])*20]
-                if next_loc in self.opponent_loc or next_loc in self.our_loc:
+                next_loc = [(self.our_head[0] + dict_str_to_values[directions[i]][0]), (self.our_head[1] + dict_str_to_values[directions[i]][1])]
+                if  next_loc in self.opponent_loc  or  next_loc in self.our_loc  or  next_loc in self.aura  or  out_of_bounds(next_loc):
                     directions[i] = None
                     # Then we want the other priority direction, or if it doesn't exist, one of other_directions
             for j in range(2): # Now, let's check other_directions
                 if not other_directions[i]: # == None
                     continue
-                next_loc = [(self.our_head[0] + dict_str_to_values[other_directions[j]][0])*20, (self.our_head[1] + dict_str_to_values[other_directions[j]][1])*20]
-                if next_loc in self.opponent_loc or next_loc in self.our_loc:
+                next_loc = [(self.our_head[0] + dict_str_to_values[other_directions[j]][0]), (self.our_head[1] + dict_str_to_values[other_directions[j]][1])]
+                if next_loc in self.opponent_loc  or  next_loc in self.our_loc  or  next_loc in self.aura  or  out_of_bounds(next_loc):
                     other_directions[i] = None
                     # Then we want the other priority direction, or if it doesn't exist, one of other_directions
 
@@ -262,7 +267,7 @@ class Agent(BaseAgent):
                 return dict_str_to_command[directions[0]]
             else: # Emergency: we have to escape in another direction
                 return dict_str_to_command[other_directions[0]]
-        except:
+        except ZeroDivisionError:
             print()
         
 
