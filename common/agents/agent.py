@@ -156,7 +156,6 @@ class Agent(BaseAgent):
                 self.target = passen2_loc
             else:
                 self.target = self.zone_min
-        print(self.zone_loc, self.zone_min)
 
         """ Détermination des directions idéales """
         if self.our_head[0] - self.target[0] < 0:
@@ -272,7 +271,11 @@ class Agent(BaseAgent):
             if next_loc in self.opponent_loc  or  next_loc in self.our_loc  or  next_loc in self.aura  or  out_of_bounds(next_loc) or next_loc in self.opponent_head:
                 other_directions[j] = None
                     # Then we want the other priority direction, or if it doesn't exist, one of other_directions
-
+        print("----------------")
+        print("aura", self.aura)
+        print("ideal_directions", ideal_directions)
+        print("directions", directions)
+        print("other_directions", other_directions)
         # Return part (if no return before)
         if directions[0]: # != None: means there is still a priority direction available
             return self.dict_str_to_command[directions[0]]
