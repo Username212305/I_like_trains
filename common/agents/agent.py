@@ -1,6 +1,7 @@
 from common.base_agent import BaseAgent
 from common.move import Move
 import random
+import math
 
 class Agent(BaseAgent):
 
@@ -10,7 +11,6 @@ class Agent(BaseAgent):
 
     
     def main_path(self):
-
         '''This method will determine the "main strategy": it will decide the next main "target",
         and returns 2 directions (among up, down, left or right) corresponding to the moves the
         train has to do in the future to reach it.'''
@@ -34,28 +34,36 @@ class Agent(BaseAgent):
         match self.autre["direction"]:
             case [1,0]:
                 self.opp_cur_dir = "right"
-                self.aura = [(self.opponent_head[0]+1,self.opponent_head[1]),
-                             (self.opponent_head[0]+1,self.opponent_head[1]-1),
-                            (self.opponent_head[0]+1,self.opponent_head[1]+1),
-                            (self.opponent_head[0]+2,self.opponent_head[1])]
+                self.aura = [[self.opponent_head[0]+1,self.opponent_head[1]],
+                             [self.opponent_head[0]+1,self.opponent_head[1]-1],
+                            [self.opponent_head[0]+1,self.opponent_head[1]+1],
+                            [self.opponent_head[0]+2,self.opponent_head[1]],
+                            [self.opponent_head[0],self.opponent_head[1]-1],
+                            [self.opponent_head[0],self.opponent_head[1]+1]]
             case [-1,0]:
                 self.opp_cur_dir = "left"
-                self.aura = [(self.opponent_head[0]-1,self.opponent_head[1]),
-                             (self.opponent_head[0]-1,self.opponent_head[1]-1),
-                            (self.opponent_head[0]-1,self.opponent_head[1]+1),
-                            (self.opponent_head[0]-2,self.opponent_head[1])]
+                self.aura = [[self.opponent_head[0]-1,self.opponent_head[1]],
+                             [self.opponent_head[0]-1,self.opponent_head[1]-1],
+                            [self.opponent_head[0]-1,self.opponent_head[1]+1],
+                            [self.opponent_head[0]-2,self.opponent_head[1]],
+                            [self.opponent_head[0],self.opponent_head[1]-1],
+                            [self.opponent_head[0],self.opponent_head[1]+1]]
             case [0,1]:
                 self.opp_cur_dir = "down"
-                self.aura = [(self.opponent_head[0],self.opponent_head[1]+1),
-                             (self.opponent_head[0]-1,self.opponent_head[1]+1),
-                            (self.opponent_head[0]+1,self.opponent_head[1]+1),
-                            (self.opponent_head[0],self.opponent_head[1]+2)]
+                self.aura = [[self.opponent_head[0],self.opponent_head[1]+1],
+                             [self.opponent_head[0]-1,self.opponent_head[1]+1],
+                            [self.opponent_head[0]+1,self.opponent_head[1]+1],
+                            [self.opponent_head[0],self.opponent_head[1]+2],
+                            [self.opponent_head[0]-1,self.opponent_head[1]],
+                            [self.opponent_head[0]+1,self.opponent_head[1]]]
             case [0,-1]:
                 self.opp_cur_dir = "up"
-                self.aura = [(self.opponent_head[0],self.opponent_head[1]-1),
-                             (self.opponent_head[0]-1,self.opponent_head[1]-1),
-                            (self.opponent_head[0]+1,self.opponent_head[1]-1),
-                            (self.opponent_head[0],self.opponent_head[1]-2)]
+                self.aura = [[self.opponent_head[0],self.opponent_head[1]-1],
+                             [self.opponent_head[0]-1,self.opponent_head[1]-1],
+                            [self.opponent_head[0]+1,self.opponent_head[1]-1],
+                            [self.opponent_head[0],self.opponent_head[1]-2],
+                            [self.opponent_head[0]-1,self.opponent_head[1]],
+                            [self.opponent_head[0]+1,self.opponent_head[1]]]
         
 
         """ info sur delivery zone"""
@@ -146,8 +154,8 @@ class Agent(BaseAgent):
         else:
             weight_zone = 7**self.our_len - d_zmin if self.our_len != 0 else -100000 #7 et 4 passagers => on priorise un passager à 2 de dist même si nous collé à la zone
             # Three parameters to target a passenger: their distance, value and the distance with the opponent's head.
-            weight_passen1 = -2497.5*d_passen1 + 7502.5*passen1_value if d_passen1 != 0 else -100000 
-            weight_passen2 = -2497.5*d_passen2 + 7502.5*passen2_value if d_passen2 != 0 else -100000 
+            weight_passen1 = -2497.5*d_passen1 + 7502.5*passen1_value  if d_passen1 != 0 else -100000 
+            weight_passen2 = -2497.5*d_passen2 + 7502.5*passen2_value  if d_passen2 != 0 else -100000 
             if weight_passen1 >= weight_passen2:
                 if weight_passen1 >= weight_zone:
                         self.target = passen1_loc
@@ -227,8 +235,26 @@ class Agent(BaseAgent):
                     if self.cur_dir == "up" or self.cur_dir == "down":
                         directions = ["right","left"]
                     else:
-                        other_directions = ["up","down"] 
-            
+                        directions = ["up","down"]
+                else: # We don't change the tuple "directions", as we can go there: just have to change "other_directions"
+                    directions = list(ideal_directions)
+                    other_directions = [self.cur_dir, self.dict_opposite_dir[ideal_directions[0]]]
+
+        else: # Means that we can go in (both) direction(s) and that we are already going the right way
+            if ideal_directions[1]: # Target on diagonal
+                directions = list(ideal_directions)
+                if self.cur_dir == ideal_directions[0]:
+                    other_directions = [self.dict_opposite_dir[ideal_directions[1]], None]
+                    
+                else: # self.cur_dir == directions[1]
+                    other_directions = [self.dict_opposite_dir[ideal_directions[0]], None]
+            else: # If target is not on a diagonal, it means we're rushing toward it
+                directions = [ideal_directions[0], None]    
+                if self.cur_dir == "up" or self.cur_dir == "down":
+                    other_directions = ["right","left"]
+                else:
+                    other_directions = ["up","down"] 
+        
         # Partie 2: Danger imminent (pas de return: check "danger potentiel" avant?)
         # We have to check both directions, starting by the first given by the variable "directions"
         # The priority direction:
@@ -252,7 +278,7 @@ class Agent(BaseAgent):
             next_loc = [(self.our_head[0] + self.dict_str_to_values[other_directions[j]][0]), (self.our_head[1] + self.dict_str_to_values[other_directions[j]][1])]
             if next_loc in self.opponent_loc  or  next_loc in self.our_loc  or  next_loc in self.aura  or  out_of_bounds(next_loc) or next_loc in self.opponent_head:
                 other_directions[j] = None
-        # Then we want the other priority direction, or if it doesn't exist, one of other_directions
+                # Then we want the other priority direction, or if it doesn't exist, one of other_directions
 
 
         # Partie 3: Piège / Danger potentiel?
@@ -271,11 +297,6 @@ class Agent(BaseAgent):
                 return self.dict_str_to_command[other_directions[random.randint(0,1)]]
             else:
                 return self.dict_str_to_command[other_directions[0]]
-    
-
-            
-        
-        
 
     def get_move(self):
 
