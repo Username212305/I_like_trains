@@ -1,3 +1,5 @@
+import os
+import sys
 import socket
 import json
 import threading
@@ -6,6 +8,7 @@ import logging
 import uuid
 import signal
 import random
+import urllib.request
 from common import stats_manager
 from common.config import Config
 from server.passenger import Passenger
@@ -57,6 +60,15 @@ logger = setup_server_logger()
 class Server:
     def __init__(self, config: Config):
         self.config = config.server
+
+        # if grading mode, set waiting_time_before_bots_seconds to 0
+        if self.config.grading_mode:
+            self.config.waiting_time_before_bots_seconds = 0
+            self.config.tick_rate = 1000
+
+        # Verify that all agent files exist before proceeding
+        self.verify_agent_files(self.config)
+        
         self.rooms = {}  # {room_id: Room}
         self.lock = threading.Lock()
 
@@ -84,6 +96,13 @@ class Server:
         )  # Track disconnected clients by full address tuple (IP, port)
         self.threads = []  # Initialize threads attribute
 
+        # Create the first room
+        self.create_room(True)
+
+        if self.config.grading_mode:
+            logger.info("Server started in grading mode")
+            return
+
         # Ping tracking for active connection checking
         self.ping_interval = self.config.client_timeout_seconds / 2
         self.ping_responses = {}  # Track which clients have responded to pings
@@ -93,13 +112,50 @@ class Server:
         self.ping_thread.daemon = True
         self.ping_thread.start()
 
-        # Create the first room
-        self.create_room(True)
-
         # Start accepting clients
         accept_thread = threading.Thread(target=self.accept_clients, daemon=True)
         accept_thread.start()
-        logger.info(f"Server started on {self.config.host}:{self.config.port}")
+        
+        # Get public IP and log server start
+        public_ip = self.get_public_ip()
+        if public_ip:
+            logger.info(f"Server started on {self.config.host}:{self.config.port} (Public IP: {public_ip})")
+        else:
+            logger.info(f"Server started on {self.config.host}:{self.config.port} (Could not determine public IP)")
+
+    def get_public_ip(self):
+        """
+        Get the public IP address of this server using an external service
+        """
+        try:
+            with urllib.request.urlopen('https://api.ipify.org') as response:
+                ip = response.read().decode('utf-8')
+                return ip
+        except Exception as e:
+            logger.warning(f"Could not determine public IP address: {e}")
+            return None
+            
+    def verify_agent_files(self, config):
+        """
+        Verifies that all agent files specified in the configuration exist in the common/agents directory.
+        Raises an error and exits the server if any file is missing.
+        """
+
+        agents_dir = os.path.join(
+            os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "common", "agents"
+        )
+
+        for agent in config.agents:
+            agent_file_path = os.path.join(agents_dir, agent.agent_file_name)
+            if not os.path.exists(agent_file_path):
+                error_msg = f"Agent file not found: {agent.agent_file_name} for agent {agent.nickname}"
+                logger.error(error_msg)
+                print(f"ERROR: {error_msg}")
+                print(f"The file should be located at: {agent_file_path}")
+                print("Server is shutting down.")
+                raise FileNotFoundError(f"Missing agent file: {agent_file_path}")
+
+        logger.info("All agent files verified successfully")
 
     def create_room(self, running):
         """
@@ -548,7 +604,7 @@ class Server:
                     )
                     return
 
-                cooldown = room.game.get_train_cooldown(nickname)
+                cooldown = room.game.get_train_respawn_cooldown(nickname)
 
                 if cooldown > 0:
                     # Inform the client of the remaining cooldown
@@ -604,10 +660,9 @@ class Server:
                         remaining_cooldown = 0
                         
                         if room.game.trains[nickname].boost_cooldown_active:
-                            current_time = time.time()
-                            elapsed_time = current_time - room.game.trains[nickname].start_cooldown_time
-                            remaining_cooldown = max(0, BOOST_COOLDOWN_DURATION - elapsed_time)
-                            message = f"Cannot drop wagon (cooldown active for {remaining_cooldown:.1f} more seconds)"
+                            # Use tick-based cooldown calculation
+                            remaining_cooldown = room.game.trains[nickname].get_boost_cooldown_time()
+                            message = f"Cannot drop wagon (cooldown active for {remaining_cooldown:.1f} ticks)"
                         
                         # Notify the client that the drop_wagon action failed
                         response = {

@@ -46,12 +46,6 @@ class NetworkManager:
             # Store server address for sending
             self.server_addr = (self.host, self.port)
 
-            # Log successful connection with local client port information
-            local_ip, local_port = self.socket.getsockname()
-            logger.info(
-                f"Successfully connected to server at {self.host}:{self.port} from local {local_ip}:{local_port}"
-            )
-
             self.last_ping_time = time.time()
 
             # Start receive thread
@@ -288,7 +282,10 @@ class NetworkManager:
                     except json.JSONDecodeError:
                         logger.error(f"Invalid JSON received: {message}")
                     except Exception as e:
-                        logger.error(f"Error processing message: {e}")
+                        import traceback
+                        logger.error(f"Error processing message: {message!r}")
+                        logger.error(f"Exception details: {e}")
+                        logger.debug(f"Exception traceback: {traceback.format_exc()}")
 
             except socket.timeout:
                 # Don't log timeout errors at all to avoid spam
