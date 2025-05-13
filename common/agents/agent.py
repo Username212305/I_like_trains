@@ -9,6 +9,7 @@ class Agent(BaseAgent):
     We define the methods used to decide the move before the method get_move (see bellow).'''
 
     def main_path(self):
+            
             '''This method will determine the "main strategy": it will decide the next main "target",
             and returns 2 directions (among up, down, left or right) corresponding to the moves the
             train has to do in the future to reach it.'''
