@@ -1,6 +1,6 @@
 from common.base_agent import BaseAgent
 from common.move import Move
-import math
+import random
 
 class Agent(BaseAgent):
 
@@ -243,22 +243,22 @@ class Agent(BaseAgent):
             if not directions[i]: # == None
                 continue
             next_loc = [(self.our_head[0] + self.dict_str_to_values[directions[i]][0]), (self.our_head[1] + self.dict_str_to_values[directions[i]][1])]
-            if  next_loc in self.opponent_loc  or  next_loc in self.our_loc  or  next_loc in self.aura  or  out_of_bounds(next_loc):
+            if  next_loc in self.opponent_loc  or  next_loc in self.our_loc  or  next_loc in self.aura  or  out_of_bounds(next_loc) or next_loc in self.opponent_head:
                 directions[i] = None
                 # Then we want the other priority direction, or if it doesn't exist, one of other_directions
         for j in range(2): # Now, let's check other_directions
-            if not other_directions[i]: # == None
+            if not other_directions[j]: # == None
                 continue
             next_loc = [(self.our_head[0] + self.dict_str_to_values[other_directions[j]][0]), (self.our_head[1] + self.dict_str_to_values[other_directions[j]][1])]
-            if next_loc in self.opponent_loc  or  next_loc in self.our_loc  or  next_loc in self.aura  or  out_of_bounds(next_loc):
-                other_directions[i] = None
-                # Then we want the other priority direction, or if it doesn't exist, one of other_directions
+            if next_loc in self.opponent_loc  or  next_loc in self.our_loc  or  next_loc in self.aura  or  out_of_bounds(next_loc) or next_loc in self.opponent_head:
+                other_directions[j] = None
+        # Then we want the other priority direction, or if it doesn't exist, one of other_directions
 
 
-            # Partie 3: Piège / Danger potentiel?
-            def loop_trap(coordinates, iterations = 3):
-                if iterations == 0:
-                    return
+        # Partie 3: Piège / Danger potentiel?
+        def loop_trap(coordinates, iterations = 3):
+            if iterations == 0:
+                return
 
         # Return part (if no return before)
         if directions[0]: # != None: means there is still a priority direction available
