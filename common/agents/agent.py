@@ -34,28 +34,36 @@ class Agent(BaseAgent):
         match self.autre["direction"]:
             case [1,0]:
                 self.opp_cur_dir = "right"
-                self.aura = [(self.opponent_head[0]+1,self.opponent_head[1]),
-                             (self.opponent_head[0]+1,self.opponent_head[1]-1),
-                            (self.opponent_head[0]+1,self.opponent_head[1]+1),
-                            (self.opponent_head[0]+2,self.opponent_head[1])]
+                self.aura = [[self.opponent_head[0]+1,self.opponent_head[1]],
+                             [self.opponent_head[0]+1,self.opponent_head[1]-1],
+                            [self.opponent_head[0]+1,self.opponent_head[1]+1],
+                            [self.opponent_head[0]+2,self.opponent_head[1]],
+                            [self.opponent_head[0],self.opponent_head[1]-1],
+                            [self.opponent_head[0],self.opponent_head[1]+1]]
             case [-1,0]:
                 self.opp_cur_dir = "left"
-                self.aura = [(self.opponent_head[0]-1,self.opponent_head[1]),
-                             (self.opponent_head[0]-1,self.opponent_head[1]-1),
-                            (self.opponent_head[0]-1,self.opponent_head[1]+1),
-                            (self.opponent_head[0]-2,self.opponent_head[1])]
+                self.aura = [[self.opponent_head[0]-1,self.opponent_head[1]],
+                             [self.opponent_head[0]-1,self.opponent_head[1]-1],
+                            [self.opponent_head[0]-1,self.opponent_head[1]+1],
+                            [self.opponent_head[0]-2,self.opponent_head[1]],
+                            [self.opponent_head[0],self.opponent_head[1]-1],
+                            [self.opponent_head[0],self.opponent_head[1]+1]]
             case [0,1]:
                 self.opp_cur_dir = "down"
-                self.aura = [(self.opponent_head[0],self.opponent_head[1]+1),
-                             (self.opponent_head[0]-1,self.opponent_head[1]+1),
-                            (self.opponent_head[0]+1,self.opponent_head[1]+1),
-                            (self.opponent_head[0],self.opponent_head[1]+2)]
+                self.aura = [[self.opponent_head[0],self.opponent_head[1]+1],
+                             [self.opponent_head[0]-1,self.opponent_head[1]+1],
+                            [self.opponent_head[0]+1,self.opponent_head[1]+1],
+                            [self.opponent_head[0],self.opponent_head[1]+2],
+                            [self.opponent_head[0]-1,self.opponent_head[1]],
+                            [self.opponent_head[0]+1,self.opponent_head[1]]]
             case [0,-1]:
                 self.opp_cur_dir = "up"
-                self.aura = [(self.opponent_head[0],self.opponent_head[1]-1),
-                             (self.opponent_head[0]-1,self.opponent_head[1]-1),
-                            (self.opponent_head[0]+1,self.opponent_head[1]-1),
-                            (self.opponent_head[0],self.opponent_head[1]-2)]
+                self.aura = [[self.opponent_head[0],self.opponent_head[1]-1],
+                             [self.opponent_head[0]-1,self.opponent_head[1]-1],
+                            [self.opponent_head[0]+1,self.opponent_head[1]-1],
+                            [self.opponent_head[0],self.opponent_head[1]-2],
+                            [self.opponent_head[0]-1,self.opponent_head[1]],
+                            [self.opponent_head[0]+1,self.opponent_head[1]]]
         
 
         """ info sur delivery zone"""
@@ -146,8 +154,8 @@ class Agent(BaseAgent):
         else:
             weight_zone = 7**self.our_len - d_zmin if self.our_len != 0 else -100000 #7 et 4 passagers => on priorise un passager à 2 de dist même si nous collé à la zone
             # Three parameters to target a passenger: their distance, value and the distance with the opponent's head.
-            weight_passen1 = -2497.5*d_passen1 + 7502.5*passen1_value if d_passen1 != 0 else -100000 
-            weight_passen2 = -2497.5*d_passen2 + 7502.5*passen2_value if d_passen2 != 0 else -100000 
+            weight_passen1 = -2497.5*d_passen1 + 7502.5*passen1_value  if d_passen1 != 0 else -100000 
+            weight_passen2 = -2497.5*d_passen2 + 7502.5*passen2_value  if d_passen2 != 0 else -100000 
             if weight_passen1 >= weight_passen2:
                 if weight_passen1 >= weight_zone:
                         self.target = passen1_loc
@@ -236,10 +244,10 @@ class Agent(BaseAgent):
             if ideal_directions[1]: # Target on diagonal
                 directions = list(ideal_directions)
                 if self.cur_dir == ideal_directions[0]:
-                    other_directions = [dict_opposite_dir[ideal_directions[1]], None]
+                    other_directions = [self.dict_opposite_dir[ideal_directions[1]], None]
                     
                 else: # self.cur_dir == directions[1]
-                    other_directions = [dict_opposite_dir[ideal_directions[0]], None]
+                    other_directions = [self.dict_opposite_dir[ideal_directions[0]], None]
             else: # If target is not on a diagonal, it means we're rushing toward it
                 directions = [ideal_directions[0], None]    
                 if self.cur_dir == "up" or self.cur_dir == "down":
@@ -260,16 +268,16 @@ class Agent(BaseAgent):
         for i in range(2): # First, let's check directions
             if not directions[i]: # == None
                 continue
-            next_loc = [(self.our_head[0] + dict_str_to_values[directions[i]][0]), (self.our_head[1] + dict_str_to_values[directions[i]][1])]
-            if  next_loc in self.opponent_loc  or  next_loc in self.our_loc  or  next_loc in self.aura  or  out_of_bounds(next_loc):
+            next_loc = [(self.our_head[0] + self.dict_str_to_values[directions[i]][0]), (self.our_head[1] + self.dict_str_to_values[directions[i]][1])]
+            if  next_loc in self.opponent_loc  or  next_loc in self.our_loc  or  next_loc in self.aura  or  out_of_bounds(next_loc) or next_loc in self.opponent_head:
                 directions[i] = None
                 # Then we want the other priority direction, or if it doesn't exist, one of other_directions
         for j in range(2): # Now, let's check other_directions
-            if not other_directions[i]: # == None
+            if not other_directions[j]: # == None
                 continue
-            next_loc = [(self.our_head[0] + dict_str_to_values[other_directions[j]][0]), (self.our_head[1] + dict_str_to_values[other_directions[j]][1])]
-            if next_loc in self.opponent_loc  or  next_loc in self.our_loc  or  next_loc in self.aura  or  out_of_bounds(next_loc):
-                other_directions[i] = None
+            next_loc = [(self.our_head[0] + self.dict_str_to_values[other_directions[j]][0]), (self.our_head[1] + self.dict_str_to_values[other_directions[j]][1])]
+            if next_loc in self.opponent_loc  or  next_loc in self.our_loc  or  next_loc in self.aura  or  out_of_bounds(next_loc) or next_loc in self.opponent_head:
+                other_directions[j] = None
                 # Then we want the other priority direction, or if it doesn't exist, one of other_directions
 
 
@@ -281,14 +289,14 @@ class Agent(BaseAgent):
         # Return part (if no return before)
         if directions[0]: # != None: means there is still a priority direction available
             if directions[1]:
-                return dict_str_to_command[directions[random.randint(0,1)]]
+                return self.dict_str_to_command[directions[random.randint(0,1)]]
             else:
-                return dict_str_to_command[directions[0]]
+                return self.dict_str_to_command[directions[0]]
         else: # Emergency: we have to escape in another direction
             if other_directions[1]:
-                return dict_str_to_command[other_directions[random.randint(0,1)]]
+                return self.dict_str_to_command[other_directions[random.randint(0,1)]]
             else:
-                return dict_str_to_command[other_directions[0]]
+                return self.dict_str_to_command[other_directions[0]]
 
     def get_move(self):
 
