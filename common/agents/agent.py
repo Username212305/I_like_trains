@@ -1,5 +1,6 @@
 from common.base_agent import BaseAgent
 from common.move import Move
+import random
 import math
 
 class Agent(BaseAgent):
@@ -235,20 +236,19 @@ class Agent(BaseAgent):
             if ideal_directions[1]: # Target on diagonal
                 directions = list(ideal_directions)
                 if self.cur_dir == ideal_directions[0]:
-                    other_directions = [self.dict_opposite_dir[ideal_directions[1]], None]
-                        
+                    other_directions = [dict_opposite_dir[ideal_directions[1]], None]
+                    
                 else: # self.cur_dir == directions[1]
-                        other_directions = [self.dict_opposite_dir[ideal_directions[0]], None]
+                    other_directions = [dict_opposite_dir[ideal_directions[0]], None]
             else: # If target is not on a diagonal, it means we're rushing toward it
                 directions = [ideal_directions[0], None]    
                 if self.cur_dir == "up" or self.cur_dir == "down":
                     other_directions = ["right","left"]
                 else:
                     other_directions = ["up","down"] 
-            
+        
         # Partie 2: Danger imminent (pas de return: check "danger potentiel" avant?)
-        # TODO: Find a way to check if "out-limits", and if we re "rushing toward" the opponent
-        # We have to check both directions, starting by the first given by the variable "directions"            
+        # We have to check both directions, starting by the first given by the variable "directions"
         # The priority direction:
         def out_of_bounds(coordinates):
             if coordinates[0] > 21 or coordinates[0] < 0:
@@ -256,32 +256,39 @@ class Agent(BaseAgent):
             if coordinates[1] > 21 or coordinates[1] < 0:
                 return True
             return False
-            
+        
         for i in range(2): # First, let's check directions
             if not directions[i]: # == None
                 continue
-            next_loc = [(self.our_head[0] + self.dict_str_to_values[directions[i]][0]), (self.our_head[1] + self.dict_str_to_values[directions[i]][1])]
-            if  next_loc in self.opponent_loc  or  next_loc in self.our_loc  or  next_loc in self.aura  or  out_of_bounds(next_loc) or next_loc in self.opponent_head:
+            next_loc = [(self.our_head[0] + dict_str_to_values[directions[i]][0]), (self.our_head[1] + dict_str_to_values[directions[i]][1])]
+            if  next_loc in self.opponent_loc  or  next_loc in self.our_loc  or  next_loc in self.aura  or  out_of_bounds(next_loc):
                 directions[i] = None
                 # Then we want the other priority direction, or if it doesn't exist, one of other_directions
         for j in range(2): # Now, let's check other_directions
-            if not other_directions[j]: # == None
+            if not other_directions[i]: # == None
                 continue
-            next_loc = [(self.our_head[0] + self.dict_str_to_values[other_directions[j]][0]), (self.our_head[1] + self.dict_str_to_values[other_directions[j]][1])]
-            if next_loc in self.opponent_loc  or  next_loc in self.our_loc  or  next_loc in self.aura  or  out_of_bounds(next_loc) or next_loc in self.opponent_head:
-                other_directions[j] = None
-                    # Then we want the other priority direction, or if it doesn't exist, one of other_directions
-        #print("----------------")
-        #print("autre", self.opponent_loc)
-        #print("ideal_directions", ideal_directions)
-        #print("directions", directions)
-        #print("other_directions", other_directions)
+            next_loc = [(self.our_head[0] + dict_str_to_values[other_directions[j]][0]), (self.our_head[1] + dict_str_to_values[other_directions[j]][1])]
+            if next_loc in self.opponent_loc  or  next_loc in self.our_loc  or  next_loc in self.aura  or  out_of_bounds(next_loc):
+                other_directions[i] = None
+                # Then we want the other priority direction, or if it doesn't exist, one of other_directions
+
+
+        # Partie 3: Piège / Danger potentiel?
+        def loop_trap(coordinates, iterations = 3):
+            if iterations == 0:
+                return
+
         # Return part (if no return before)
         if directions[0]: # != None: means there is still a priority direction available
-            return self.dict_str_to_command[directions[0]]
+            if directions[1]:
+                return dict_str_to_command[directions[random.randint(0,1)]]
+            else:
+                return dict_str_to_command[directions[0]]
         else: # Emergency: we have to escape in another direction
-            return self.dict_str_to_command[other_directions[0]]
-        
+            if other_directions[1]:
+                return dict_str_to_command[other_directions[random.randint(0,1)]]
+            else:
+                return dict_str_to_command[other_directions[0]]
 
     def get_move(self):
 
