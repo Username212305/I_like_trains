@@ -285,18 +285,27 @@ class Agent(BaseAgent):
         def loop_trap(coordinates, iterations = 3):
             if iterations == 0:
                 return
-
+        """print zone"""
+        print("---------------")
+        print("target: ",self.target, " | ", "cur_dir: ",self.cur_dir, " | ", "our_head: ", self.our_head)
+        print("ideal_directions: ", ideal_directions, " | ","directions: ",directions, " | ", "other_directions: ", other_directions)
+        print("aura: ",self.aura)
+        print("opponent_loc: ",self.opponent_loc, " | ", "our_loc: ",self.our_loc)
+        
         # Return part (if no return before)
         if directions[0]: # != None: means there is still a priority direction available
             if directions[1]:
                 return self.dict_str_to_command[directions[random.randint(0,1)]]
             else:
                 return self.dict_str_to_command[directions[0]]
+        elif directions[1]: 
+            return self.dict_str_to_command[directions[1]]
         else: # Emergency: we have to escape in another direction
-            if other_directions[1]:
-                return self.dict_str_to_command[other_directions[random.randint(0,1)]]
+            if other_directions[0]:
+                if other_directions[1]:
+                    return self.dict_str_to_command[other_directions[random.randint(0,1)]]
             else:
-                return self.dict_str_to_command[other_directions[0]]
+                return self.dict_str_to_command[other_directions[1]]
 
     def get_move(self):
 
