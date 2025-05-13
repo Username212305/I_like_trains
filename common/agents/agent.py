@@ -1,5 +1,6 @@
 from common.base_agent import BaseAgent
 from common.move import Move
+import random
 
 
 class Agent(BaseAgent):
@@ -35,8 +36,8 @@ class Agent(BaseAgent):
             self.opp_len = len(self.autre["wagons"])
             self.opponent_loc = [[i[0]//self.cell_size, i[1]//self.cell_size] for i in self.autre["wagons"]]
             self.opponent_head = (self.autre["position"][0]//self.cell_size,self.autre["position"][1]//self.cell_size)
-            self.aura = [[self.opponent_head[0] + x, self.opponent_head[1] + y] for x in range(-2,3) for y in range(-2,3)]
-
+            self.aura = [[self.opponent_head[0] + x, self.opponent_head[1] + y] for x in range(-1,2) for y in range(-1,2)]
+            
             """ info sur delivery zone"""
             self.zone_loc = [(self.delivery_zone["position"][0]//self.cell_size , self.delivery_zone["position"][1]//self.cell_size)] # zone_loc = [x,y] case de la zone de livraison
             znch = self.delivery_zone["height"]//self.cell_size # zone_nb_case_haut
@@ -97,9 +98,9 @@ class Agent(BaseAgent):
             # that can have an importance in our choice a "weight". (here, "c" means "coefficient")
             # /!\ This part will have to be adapted by experiments ! '''
             c_len = 9
-            c_passen_val = 10
-            c_d_zone = 3
-            c_d_passen = 3
+            c_passen_val = 6
+            c_d_zone = 0.1
+            c_d_passen = 0.1
             c_d_oppo_passen = 0.5
 
 
@@ -122,7 +123,7 @@ class Agent(BaseAgent):
 
             # Determinig next target:
             else:
-                weight_zone = (c_len * self.our_len)**1.5 / (c_d_zone * d_zone) if self.our_len != 0 else -100000
+                weight_zone = (c_len * self.our_len)**1.1 / (c_d_zone * d_zone) if self.our_len != 0 else -100000
                 # Three parameters to target a passenger: their distance, value and the distance with the opponent's head.
                 weight_passen1 = (c_passen_val * passen1_value) / (c_d_passen * d_passen1) if d_passen1 != 0 else -100000 #- (c_d_oppo_passen * d_oppo_passen1)**2
                 weight_passen2 = (c_passen_val * passen2_value) / (c_d_passen * d_passen2) if d_passen2 != 0 else -100000 #- (c_d_oppo_passen * d_oppo_passen2)**2
@@ -135,7 +136,7 @@ class Agent(BaseAgent):
                     self.target = passen2_loc
                 else:
                     self.target = self.zone_min
-            print(self.target, d_passen2, d_passen1)
+            #print(f"weight_passen1: {weight_passen1} \n weight_passen2: {weight_passen2} \n weight_zone: {weight_zone} \n")
 
             """ Détermination des directions idéales """
             if self.our_head[0] - self.target[0] < 0:
@@ -157,7 +158,7 @@ class Agent(BaseAgent):
                     ideal_directions = ("down",None)
                 else:                 # our_head[1] - target[1] > 0
                     ideal_directions = ("up",None)
-        
+
             return ideal_directions
             # FIN DE MAIN_PATH
         except ZeroDivisionError:
@@ -235,7 +236,6 @@ class Agent(BaseAgent):
                         other_directions = ["up","down"] 
             
             # Partie 2: Danger imminent (pas de return: check "danger potentiel" avant?)
-            # TODO: Find a way to check if "out-limits", and if we re "rushing toward" the opponent
             # We have to check both directions, starting by the first given by the variable "directions"
             # The priority direction:
             def out_of_bounds(coordinates):
@@ -260,11 +260,26 @@ class Agent(BaseAgent):
                     other_directions[i] = None
                     # Then we want the other priority direction, or if it doesn't exist, one of other_directions
 
+
+            # Partie 3: Piège / Danger potentiel?
+            def loop_trap(coordinates, iterations = 3):
+                if iterations == 0:
+                    return
+
             # Return part (if no return before)
             if directions[0]: # != None: means there is still a priority direction available
-                return dict_str_to_command[directions[0]]
+                if directions[1]:
+                    return dict_str_to_command[directions[random.randint(0,1)]]
+                else:
+                    return dict_str_to_command[directions[0]]
             else: # Emergency: we have to escape in another direction
-                return dict_str_to_command[other_directions[0]]
+                if other_directions[1]:
+                    return dict_str_to_command[other_directions[random.randint(0,1)]]
+                else:
+                    return dict_str_to_command[other_directions[0]]
+        
+
+                
         except ZeroDivisionError:
             print()
         
