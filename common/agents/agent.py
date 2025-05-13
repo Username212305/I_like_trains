@@ -10,9 +10,10 @@ class Agent(BaseAgent):
 
     
     def main_path(self):
-        '''This method will determine the "main strategy": it will decide the next main "target",
-        and returns 2 directions (among up, down, left or right) corresponding to the moves the
-        train has to do in the future to reach it.'''
+        try:
+            '''This method will determine the "main strategy": it will decide the next main "target",
+            and returns 2 directions (among up, down, left or right) corresponding to the moves the
+            train has to do in the future to reach it.'''
 
         # Dictionaries to convert the directions-string into something else
         self.dict_str_to_command = {"up":Move.UP, "down":Move.DOWN, "right":Move.RIGHT, "left":Move.LEFT}
