@@ -84,10 +84,11 @@ class Agent(BaseAgent):
             self.opp_len = []
             self.opponent_loc = []
             self.opponent_head = []
-            for i in range(len(self.autre)):
-                self.opp_len = len(self.autre["wagons"])
-                self.opponent_loc = [[i[0]//self.cell_size, i[1]//self.cell_size] for i in self.autre["wagons"]]
-                self.opponent_head = (self.autre["position"][0]//self.cell_size,self.autre["position"][1]//self.cell_size)
+            for k in range(len(self.autre)):
+                self.opp_len.append(len(self.autre[k]["wagons"]))
+                # opponent_loc a toutes les coordonnées des wagons de tous les adversaires (les coo ne sont pas "differenciées")
+                self.opponent_loc.append([i[0]//self.cell_size, i[1]//self.cell_size] for i in self.autre[k]["wagons"])
+                self.opponent_head.append((self.autre[k]["position"][0]//self.cell_size,self.autre[k]["position"][1]//self.cell_size))
             
             # TODO Adapter l'aura (je l ai pas fait)
             match self.autre["direction"]:
@@ -134,10 +135,10 @@ class Agent(BaseAgent):
             passen_loc.append((passagers[j]["position"][0]//self.cell_size, passagers[j]["position"][1]//self.cell_size))
             passen_value.append(passagers[j]["value"])
             d_passen.append(abs(passen_loc[j][0] - self.our_head[0]) + abs(passen_loc[j][1] - self.our_head[1]))
-            all_distances_passen_oppo = []
+            all_distances_passen_oppo = [] # Variable temporaire pour déterminer le minimum des valeurs de cette liste
             for head in self.opponent_head:
                 all_distances_passen_oppo.append(abs(passen_loc[j][0] - head[0]) + abs(passen_loc[j][1] - head[1]))
-            d_oppo_passen.append(min(all_distances_passen_oppo))
+            d_oppo_passen.append(min(all_distances_passen_oppo)) # correspond aux distances minimales de chaque passager avec l'adversaire le plus proche d'eux
         
 
 
@@ -164,14 +165,23 @@ class Agent(BaseAgent):
             # TODO Adapter LES weight passagers
             weight_zone = 7**self.our_len - d_zmin if self.our_len != 0 else -100000 #7 et 4 passagers => on priorise un passager à 2 de dist même si nous collé à la zone
             # Three parameters to target a passenger: their distance, value and the distance with the opponent's head.
-            weight_passen = -2497.5*d_passen + 7502.5*passen_value  if d_passen != 0 else -100000 
+            weight_passen = []
+            for w in range(passagers):
+                x = -2497.5*d_passen + 7502.5*passen_value if d_passen != 0 else -100000
+                weight_passen.append(x)
+            
+            # Définition du passager le "plus lourd"
+            max = weight_passen[0]
+            index = 0
+            for i, weight in enumerate(passen_loc):
+                if weight > max:
+                    max = weight
+                    index = i
 
-
-            """TODO trouver le passager le plus lourd"""
             if weight_zone >= max(weight_passen):
                 self.target = self.zone_min
             else:
-                self.target = passen_loc
+                self.target = passen_loc[index]
             
         """ Détermination des directions idéales """
         if self.our_head[0] - self.target[0] < 0:
