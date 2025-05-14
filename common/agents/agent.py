@@ -168,19 +168,19 @@ class Agent(BaseAgent):
             weight_zone = 7**self.our_len - d_zmin if self.our_len != 0 else -100000 #7 et 4 passagers => on priorise un passager à 2 de dist même si nous collé à la zone
             # Three parameters to target a passenger: their distance, value and the distance with the opponent's head.
             weight_passen = []
-            for w in range(passagers):
-                x = -2497.5*d_passen + 7502.5*passen_value if d_passen != 0 else -100000
+            for w in range(len(passagers)):
+                x = -2497.5*d_passen[w] + 7502.5*passen_value[w] if d_passen[w] != 0 else -100000
                 weight_passen.append(x)
             
             # Définition du passager le "plus lourd"
             max = weight_passen[0]
             index = 0
-            for i, weight in enumerate(passen_loc):
+            for i, weight in enumerate(weight_passen):
                 if weight > max:
                     max = weight
                     index = i
 
-            if weight_zone >= max(weight_passen):
+            if weight_zone >= max:
                 self.target = self.zone_min
             else:
                 self.target = passen_loc[index]
