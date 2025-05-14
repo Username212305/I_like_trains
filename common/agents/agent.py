@@ -90,40 +90,42 @@ class Agent(BaseAgent):
                 self.opponent_loc.append([i[0]//self.cell_size, i[1]//self.cell_size] for i in self.autre[k]["wagons"])
                 self.opponent_head.append((self.autre[k]["position"][0]//self.cell_size,self.autre[k]["position"][1]//self.cell_size))
             
-            # TODO Adapter l'aura (je l ai pas fait)
-            match self.autre["direction"]:
-                case [1,0]:
-                    self.opp_cur_dir = "right"
-                    self.aura = [[self.opponent_head[0]+1,self.opponent_head[1]],
-                                [self.opponent_head[0]+1,self.opponent_head[1]-1],
-                                [self.opponent_head[0]+1,self.opponent_head[1]+1],
-                                [self.opponent_head[0]+2,self.opponent_head[1]],
-                                [self.opponent_head[0],self.opponent_head[1]-1],
-                                [self.opponent_head[0],self.opponent_head[1]+1]]
-                case [-1,0]:
-                    self.opp_cur_dir = "left"
-                    self.aura = [[self.opponent_head[0]-1,self.opponent_head[1]],
-                                [self.opponent_head[0]-1,self.opponent_head[1]-1],
-                                [self.opponent_head[0]-1,self.opponent_head[1]+1],
-                                [self.opponent_head[0]-2,self.opponent_head[1]],
-                                [self.opponent_head[0],self.opponent_head[1]-1],
-                                [self.opponent_head[0],self.opponent_head[1]+1]]
-                case [0,1]:
-                    self.opp_cur_dir = "down"
-                    self.aura = [[self.opponent_head[0],self.opponent_head[1]+1],
-                                [self.opponent_head[0]-1,self.opponent_head[1]+1],
-                                [self.opponent_head[0]+1,self.opponent_head[1]+1],
-                                [self.opponent_head[0],self.opponent_head[1]+2],
-                                [self.opponent_head[0]-1,self.opponent_head[1]],
-                                [self.opponent_head[0]+1,self.opponent_head[1]]]
-                case [0,-1]:
-                    self.opp_cur_dir = "up"
-                    self.aura = [[self.opponent_head[0],self.opponent_head[1]-1],
-                                [self.opponent_head[0]-1,self.opponent_head[1]-1],
-                                [self.opponent_head[0]+1,self.opponent_head[1]-1],
-                                [self.opponent_head[0],self.opponent_head[1]-2],
-                                [self.opponent_head[0]-1,self.opponent_head[1]],
-                                [self.opponent_head[0]+1,self.opponent_head[1]]]
+            self.aura = []
+            self.opp_cur_dir = []
+            for m in range(len(self.autre)):
+                match self.autre[m]["direction"]:
+                    case [1,0]:
+                        self.opp_cur_dir.append("right")
+                        self.aura.append([[self.opponent_head[m][0]+1,self.opponent_head[m][1]],
+                                    [self.opponent_head[m][0]+1,self.opponent_head[m][1]-1],
+                                    [self.opponent_head[m][0]+1,self.opponent_head[m][1]+1],
+                                    [self.opponent_head[m][0]+2,self.opponent_head[m][1]],
+                                    [self.opponent_head[m][0],self.opponent_head[m][1]-1],
+                                    [self.opponent_head[m][0],self.opponent_head[m][1]+1]])
+                    case [-1,0]:
+                        self.opp_cur_dir.append("left")
+                        self.aura.append([[self.opponent_head[m][0]-1,self.opponent_head[m][1]],
+                                    [self.opponent_head[m][0]-1,self.opponent_head[m][1]-1],
+                                    [self.opponent_head[m][0]-1,self.opponent_head[m][1]+1],
+                                    [self.opponent_head[m][0]-2,self.opponent_head[m][1]],
+                                    [self.opponent_head[m][0],self.opponent_head[m][1]-1],
+                                    [self.opponent_head[m][0],self.opponent_head[m][1]+1]])
+                    case [0,1]:
+                        self.opp_cur_dir.append("down")
+                        self.aura.append([[self.opponent_head[m][0],self.opponent_head[m][1]+1],
+                                    [self.opponent_head[m][0]-1,self.opponent_head[m][1]+1],
+                                    [self.opponent_head[m][0]+1,self.opponent_head[m][1]+1],
+                                    [self.opponent_head[m][0],self.opponent_head[m][1]+2],
+                                    [self.opponent_head[m][0]-1,self.opponent_head[m][1]],
+                                    [self.opponent_head[m][0]+1,self.opponent_head[m][1]]])
+                    case [0,-1]:
+                        self.opp_cur_dir.append("up")
+                        self.aura.append([[self.opponent_head[m][0],self.opponent_head[m][1]-1],
+                                    [self.opponent_head[m][0]-1,self.opponent_head[m][1]-1],
+                                    [self.opponent_head[m][0]+1,self.opponent_head[1]-1],
+                                    [self.opponent_head[m][0],self.opponent_head[m][1]-2],
+                                    [self.opponent_head[m][0]-1,self.opponent_head[m][1]],
+                                    [self.opponent_head[m][0]+1,self.opponent_head[m][1]]])
 
         """ info sur passagers"""
         passagers = self.passengers
