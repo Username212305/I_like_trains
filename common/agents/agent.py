@@ -19,6 +19,7 @@ class Agent(BaseAgent):
         self.dict_str_to_command = {"up":Move.UP, "down":Move.DOWN, "right":Move.RIGHT, "left":Move.LEFT}
         self.dict_str_to_values = {"up":(0,-1), "down":(0,1), "right":(1,0), "left":(-1,0)}
         self.dict_opposite_dir = {"up":"down","right":"left","down":"up","left":"right"}
+
         """ Infos sur les Trains """
         self.autre = []
         for i in self.all_trains.keys():
@@ -30,6 +31,21 @@ class Agent(BaseAgent):
         self.is_alone = False
         if not self.autre:
             self.is_alone = True
+
+        """ Our own attributes"""
+        match self.train["direction"]:
+            case [1,0]:
+                self.cur_dir = "right"
+            case [-1,0]:
+                self.cur_dir = "left"
+            case [0,1]:
+                self.cur_dir = "down"
+            case [0,-1]:
+                self.cur_dir = "up"
+        self.our_len = int(len(self.train["wagons"]))
+        self.our_loc = [[i[0]//self.cell_size, i[1]//self.cell_size] for i in self.train["wagons"]]
+        self.our_head = (self.train["position"][0]//self.cell_size , self.train["position"][1]//self.cell_size)
+
 
         """ info sur delivery zone"""
         self.zone_loc = [(self.delivery_zone["position"][0]//self.cell_size , self.delivery_zone["position"][1]//self.cell_size)] # zone_loc = [x,y] case de la zone de livraison
@@ -53,27 +69,6 @@ class Agent(BaseAgent):
                         for y in range(1,znch):
                             for x in range(1,zncl):
                                 self.zone_loc.append((self.zone_loc[0][0] + x,self.zone_loc[0][1] + y)) # à voir si le dernier cas suffit pas, histoire de faire propre
-        """ info sur passagers
-        TODO centraliser les infos passager en trois variables: coordonnées, distances, et valeurs"""
-        passagers = self.passengers
-        passen_loc = (passagers[0]["position"][0]//self.cell_size, passagers[0]["position"][1]//self.cell_size)
-        passen_value = passagers[0]["value"]
-        d_passen = abs(passen_loc[0] - self.our_head[0]) + abs(passen_loc[1] - self.our_head[1])            
-
-        """ Our own attributes"""
-        match self.train["direction"]:
-            case [1,0]:
-                self.cur_dir = "right"
-            case [-1,0]:
-                self.cur_dir = "left"
-            case [0,1]:
-                self.cur_dir = "down"
-            case [0,-1]:
-                self.cur_dir = "up"
-        self.our_len = int(len(self.train["wagons"]))
-        self.our_loc = [[i[0]//self.cell_size, i[1]//self.cell_size] for i in self.train["wagons"]]
-        self.our_head = (self.train["position"][0]//self.cell_size , self.train["position"][1]//self.cell_size)
-
 
         """d_zone elaborée"""
         d_zmin = abs(self.zone_loc[0][0] - self.our_head[0]) + abs(self.zone_loc[0][1] - self.our_head[1]) # distance zone de livraison case origine
@@ -84,15 +79,17 @@ class Agent(BaseAgent):
                 d_zmin = d
                 self.zone_min = self.zone_loc[i] # case de zone la plus proche de nous
         
-        """ Infos sur l(es) autre(s)
-        TODO Adapter en fonction du nombre d'autres"""
+        """ Infos sur l(es) autre(s)"""
         if not self.is_alone:
-            self.opp_len = len(self.autre["wagons"])
-            self.opponent_loc = [[i[0]//self.cell_size, i[1]//self.cell_size] for i in self.autre["wagons"]]
-            self.opponent_head = (self.autre["position"][0]//self.cell_size,self.autre["position"][1]//self.cell_size)
-            d_oppo_passen1 = abs(passen_loc[0] - self.opponent_head[0]) + abs(passen_loc[1] - self.opponent_head[1])
-            d_oppo_passen2 = abs(passen_loc[0] - self.opponent_head[0]) + abs(passen_loc[1] - self.opponent_head[1])
+            self.opp_len = []
+            self.opponent_loc = []
+            self.opponent_head = []
+            for i in range(len(self.autre)):
+                self.opp_len = len(self.autre["wagons"])
+                self.opponent_loc = [[i[0]//self.cell_size, i[1]//self.cell_size] for i in self.autre["wagons"]]
+                self.opponent_head = (self.autre["position"][0]//self.cell_size,self.autre["position"][1]//self.cell_size)
             
+            # TODO Adapter l'aura (je l ai pas fait)
             match self.autre["direction"]:
                 case [1,0]:
                     self.opp_cur_dir = "right"
@@ -126,7 +123,24 @@ class Agent(BaseAgent):
                                 [self.opponent_head[0],self.opponent_head[1]-2],
                                 [self.opponent_head[0]-1,self.opponent_head[1]],
                                 [self.opponent_head[0]+1,self.opponent_head[1]]]
-    
+
+        """ info sur passagers"""
+        passagers = self.passengers
+        passen_loc = []
+        passen_value = []
+        d_passen = []
+        d_oppo_passen = []
+        for j in range(len(passagers)):
+            passen_loc.append((passagers[j]["position"][0]//self.cell_size, passagers[j]["position"][1]//self.cell_size))
+            passen_value.append(passagers[j]["value"])
+            d_passen.append(abs(passen_loc[j][0] - self.our_head[0]) + abs(passen_loc[j][1] - self.our_head[1]))
+            all_distances_passen_oppo = []
+            for head in self.opponent_head:
+                all_distances_passen_oppo.append(abs(passen_loc[j][0] - head[0]) + abs(passen_loc[j][1] - head[1]))
+            d_oppo_passen.append(min(all_distances_passen_oppo))
+        
+
+
 
         ''' Beginning of the method: we'll compact the parameters into two variables: one for each
             "target a passenger" choice, and one for the "target zone" choice.'''
