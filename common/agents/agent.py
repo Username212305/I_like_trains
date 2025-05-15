@@ -87,7 +87,7 @@ class Agent(BaseAgent):
             for k in range(len(self.autre)):
                 self.opp_len.append(len(self.autre[k]["wagons"]))
                 # opponent_loc a toutes les coordonnées des wagons de tous les adversaires (les coo ne sont pas "differenciées")
-                self.opponent_loc.append([i[0]//self.cell_size, i[1]//self.cell_size] for i in self.autre[k]["wagons"])
+                self.opponent_loc.extend([[i[0]//self.cell_size, i[1]//self.cell_size] for i in self.autre[k]["wagons"]])
                 self.opponent_head.append((self.autre[k]["position"][0]//self.cell_size,self.autre[k]["position"][1]//self.cell_size))
             
             self.aura = []
@@ -96,7 +96,7 @@ class Agent(BaseAgent):
                 match self.autre[m]["direction"]:
                     case [1,0]:
                         self.opp_cur_dir.append("right")
-                        self.aura.append([[self.opponent_head[m][0]+1,self.opponent_head[m][1]],
+                        self.aura.extend([[self.opponent_head[m][0]+1,self.opponent_head[m][1]],
                                     [self.opponent_head[m][0]+1,self.opponent_head[m][1]-1],
                                     [self.opponent_head[m][0]+1,self.opponent_head[m][1]+1],
                                     [self.opponent_head[m][0]+2,self.opponent_head[m][1]],
@@ -104,7 +104,7 @@ class Agent(BaseAgent):
                                     [self.opponent_head[m][0],self.opponent_head[m][1]+1]])
                     case [-1,0]:
                         self.opp_cur_dir.append("left")
-                        self.aura.append([[self.opponent_head[m][0]-1,self.opponent_head[m][1]],
+                        self.aura.extend([[self.opponent_head[m][0]-1,self.opponent_head[m][1]],
                                     [self.opponent_head[m][0]-1,self.opponent_head[m][1]-1],
                                     [self.opponent_head[m][0]-1,self.opponent_head[m][1]+1],
                                     [self.opponent_head[m][0]-2,self.opponent_head[m][1]],
@@ -112,7 +112,7 @@ class Agent(BaseAgent):
                                     [self.opponent_head[m][0],self.opponent_head[m][1]+1]])
                     case [0,1]:
                         self.opp_cur_dir.append("down")
-                        self.aura.append([[self.opponent_head[m][0],self.opponent_head[m][1]+1],
+                        self.aura.extend([[self.opponent_head[m][0],self.opponent_head[m][1]+1],
                                     [self.opponent_head[m][0]-1,self.opponent_head[m][1]+1],
                                     [self.opponent_head[m][0]+1,self.opponent_head[m][1]+1],
                                     [self.opponent_head[m][0],self.opponent_head[m][1]+2],
@@ -120,9 +120,9 @@ class Agent(BaseAgent):
                                     [self.opponent_head[m][0]+1,self.opponent_head[m][1]]])
                     case [0,-1]:
                         self.opp_cur_dir.append("up")
-                        self.aura.append([[self.opponent_head[m][0],self.opponent_head[m][1]-1],
+                        self.aura.extend([[self.opponent_head[m][0],self.opponent_head[m][1]-1],
                                     [self.opponent_head[m][0]-1,self.opponent_head[m][1]-1],
-                                    [self.opponent_head[m][0]+1,self.opponent_head[1]-1],
+                                    [self.opponent_head[m][0]+1,self.opponent_head[m][1]-1],
                                     [self.opponent_head[m][0],self.opponent_head[m][1]-2],
                                     [self.opponent_head[m][0]-1,self.opponent_head[m][1]],
                                     [self.opponent_head[m][0]+1,self.opponent_head[m][1]]])
@@ -315,7 +315,7 @@ class Agent(BaseAgent):
 
                 for j in frontiere_precedente: # On réitère le programme pour chaque case de la frontière actuelle
                     for i in [(j[0] + x, j[1] + y) for x in range(-1,2) for y in range(-1,2)]: # On parcours toutes les cases autour de la cible
-                        if not (i in cases_check or i in self.our_loc or i == self.our_head or out_of_bounds(i)):
+                        if not (i in cases_check or i in self.our_loc or i in self.opponent_loc or i == self.our_head or out_of_bounds(i)):
                             # On rajoute uniquement les cases libres, présente dans aucune des deux frontieres
                             frontiere_nouvelle.append(i)
                             cases_check.append(i)
@@ -330,7 +330,7 @@ class Agent(BaseAgent):
                 frontiere_nouvelle = []
             return False
 
-        """print zone"""
+        '''print zone'''
         print("---------------")
         print("target: ",self.target, " | ", "cur_dir: ",self.cur_dir, " | ", "our_head: ", self.our_head)
         print("ideal_directions: ", ideal_directions, " | ","directions: ",directions, " | ", "other_directions: ", other_directions)
@@ -346,13 +346,16 @@ class Agent(BaseAgent):
                 return self.dict_str_to_command[directions[0]]
         elif directions[1]: 
             return self.dict_str_to_command[directions[1]]
-        else: # Emergency: we have to escape in another direction
+        
+        else: # There is no "best" direction available, we have to escape in another
             if other_directions[0]:
                 if other_directions[1]:
                     return self.dict_str_to_command[other_directions[r]]
+                else:
+                    return self.dict_str_to_command[other_directions[0]]
             else:
                 return self.dict_str_to_command[other_directions[1]]
-
+  
     def get_move(self):
 
         return self.adapt_path(self.main_path())
