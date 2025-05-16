@@ -7,6 +7,13 @@ class Agent(BaseAgent):
 
     ''' Beginning of the code:
     We define the methods used to decide the move before the method get_move (see bellow).'''
+    '''TODO:
+    - Implémenter tactique d'esquive de la tête + efficace (situation du "L")
+    - Adaptation des formules de weight (value -, length + ET d_oppo_passen)
+    - Finir fonction looptrap
+    - Corriger bugs pour 3 adversaires
+    - Implémenter boost (/!\ cooldown)
+    - End_game_protocol()'''
 
 
     
@@ -22,11 +29,13 @@ class Agent(BaseAgent):
 
         """ Infos sur les Trains """
         self.autre = []
+        self.autre_nicknames = []
         for i in self.all_trains.keys():
             if i == self.nickname:
                 self.train = self.all_trains[i]
             else:
                 self.autre.append(self.all_trains[i])
+                self.autre_nicknames.append(i)
 
         self.is_alone = False
         if not self.autre:
@@ -142,18 +151,81 @@ class Agent(BaseAgent):
                 all_distances_passen_oppo.append(abs(passen_loc[j][0] - head[0]) + abs(passen_loc[j][1] - head[1]))
             d_oppo_passen.append(min(all_distances_passen_oppo)) # correspond aux distances minimales de chaque passager avec l'adversaire le plus proche d'eux
         
+        def end_game_protocol():
+            '''This function is called when we have advance at best_scores. It asks our train to stay around
+            the zone, and prohibits the others to earn points.'''
+            condition_len = (self.game_height + self.game_width)//10 + 3
+            start_point = (self.delivery_zone["position"][0]//self.cell_size -1, self.delivery_zone["position"][1]//self.cell_size -1)
+            chemin = [start_point]
+            # On rajoute chaque case dans l'ordre, en faisant le tour dans le sens trigonométrique
+            chemin.extend([(start_point[0]+i, start_point[1]) for i in range(1, zncl+2)])
+            chemin.extend([(start_point[0]+zncl+1, start_point[1]+i) for i in range(1, znch+2)])
+            chemin.extend([(start_point[0]+zncl+1-i, start_point[1]) for i in range(1, zncl+2)])
+            chemin.extend([(start_point[0], start_point[1]+znch+1-i) for i in range(1, znch+2)])
+
+            # Si on se trouve déjà sur le chemin avec la longueur suffisante, il ne reste plus qu'à tourner
+            if self.our_len == condition_len:
+                if self.our_head in chemin:
+                    # On désactive l'aura
+                    self.aura = []
+                    return chemin[chemin.index(self.our_head) + 1]
+
+                # On détermine le point de "chemin" le plus proche
+                point_target = chemin[0]
+                dist_point_min = 10000
+                for i, point in enumerate(chemin):
+                    if abs(point[0]-self.our_head[0]) + abs(point[1]-self.our_head[1]) < dist_point_min:
+                        point_target = point
+
+                # On veut éviter les passagers
+                self.opponent_loc.extend(passen_loc)
+
+                return point_target
+
+            # Si on a pas encore la longueur optimale, il faut cibler les passagers
+            # On enlève les passagers trop volumineux en se rapprochant de condition_len
+            if self.our_len == condition_len - 2:
+                for i, val in enumerate(passen_value):
+                    if val == 3:
+                        passen_value[i] = -10000
+                
+            if self.our_len == condition_len - 1:
+                for i, val in enumerate(passen_value):
+                    if val >= 2:
+                        passen_value[i] = -10000
+
+            # Si il n'y a que des passagers trop lourds, on attends que d'autres apparaissent, en attendant au centre
+            if [-10000 for p in range(len(passen_value))] == passen_value:
+                return (self.game_width//40, self.game_height//40)
+
+
+            weight_passen = []
+            for w in range(len(passagers)): # Coefficient augmenté pour la valeur du passager
+                x = -2497.5*d_passen[w] + 10000*passen_value[w] if d_passen[w] != 0 else -100000
+                weight_passen.append(x)
+            
+            return passen_loc[weight_passen.index(max(weight_passen))]
 
 
 
         ''' Beginning of the method: we'll compact the parameters into two variables: one for each
-            "target a passenger" choice, and one for the "target zone" choice.'''
-            
-            # Deciding section:
-            # In-zone handler, in case we are in the zone and still need to let passengers:
-            # We call a variable "d" to gain space: its the distance on (x, y) between the first corner point
-            # of the zone and us
+        "target a passenger" choice, and one for the "target zone" choice.'''
+
         self.target = None
-        if self.our_len != 0 and self.our_head in self.zone_loc:
+
+        # end_game_protocol check:
+        last_case = (self.zone_loc[0][0] + znch -1, self.zone_loc[0][1] +zncl -1)
+        if 0 in self.zone_loc[0] or self.game_height//self.cell_size -1 in self.zone_loc[0] or self.game_width//self.cell_size -1 in self.zone_loc[0]:
+            lim_check = False
+        elif self.game_height//self.cell_size -1 in last_case or self.game_width//self.cell_size -1 in last_case:
+            lim_check = False
+        else:
+            lim_check = True
+        if lim_check and self.best_scores[self.nickname] + 0.8*self.our_len > max([self.best_scores[p]for p in self.autre_nicknames]) + 15:
+            self.target = end_game_protocol()
+
+        # In-zone-handler
+        elif self.our_len != 0 and self.our_head in self.zone_loc:
             for i in self.zone_loc:
                 if i == self.our_head or i in self.our_loc or i in self.opponent_loc:
                     continue
@@ -162,28 +234,20 @@ class Agent(BaseAgent):
             if not self.target: # Si toutes les cases de zone sont occupées
                 self.target = self.zone_loc[0]
 
-        # Determinig next target:
+        # Determinig next target (basic case):
         else:
-            # TODO Adapter LES weight passagers
             weight_zone = 7**self.our_len - d_zmin if self.our_len != 0 else -100000 #7 et 4 passagers => on priorise un passager à 2 de dist même si nous collé à la zone
             # Three parameters to target a passenger: their distance, value and the distance with the opponent's head.
             weight_passen = []
             for w in range(len(passagers)):
                 x = -2497.5*d_passen[w] + 7502.5*passen_value[w] if d_passen[w] != 0 else -100000
                 weight_passen.append(x)
-            
-            # Définition du passager le "plus lourd"
-            max = weight_passen[0]
-            index = 0
-            for i, weight in enumerate(weight_passen):
-                if weight > max:
-                    max = weight
-                    index = i
 
-            if weight_zone >= max:
+            # Détermination de la target
+            if weight_zone >= max(weight_passen):
                 self.target = self.zone_min
             else:
-                self.target = passen_loc[index]
+                self.target = passen_loc[weight_passen.index(max(weight_passen))]
             
         """ Détermination des directions idéales """
         if self.our_head[0] - self.target[0] < 0:
