@@ -2,7 +2,8 @@ from common.base_agent import BaseAgent
 from common.move import Move
 import random
 import math
-
+#127.0.0.1
+#128.179.154.221 
 class Agent(BaseAgent):
 
     ''' Beginning of the code:
@@ -184,7 +185,7 @@ class Agent(BaseAgent):
                 self.target = self.zone_min
             else:
                 self.target = passen_loc[index]
-            
+        print(weight_zone, weight_passen)   
         """ Détermination des directions idéales """
         if self.our_head[0] - self.target[0] < 0:
             if self.our_head[1] - self.target[1] < 0:
@@ -336,6 +337,7 @@ class Agent(BaseAgent):
         print("ideal_directions: ", ideal_directions, " | ","directions: ",directions, " | ", "other_directions: ", other_directions)
         print("aura: ",self.aura)
         print("opponent_loc: ",self.opponent_loc, " | ", "our_loc: ",self.our_loc)
+        
         
         # Return part (if no return before)
         r = random.randint(0,1)
