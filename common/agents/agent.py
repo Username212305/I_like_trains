@@ -155,21 +155,21 @@ class Agent(BaseAgent):
         def end_game_protocol():
             '''This function is called when we have advance at best_scores. It asks our train to stay around
             the zone, and prohibits the others to earn points.'''
-            condition_len = (self.game_height + self.game_width)//10 + 3
+            condition_len = (zncl + znch)*2 + 2
             start_point = (self.delivery_zone["position"][0]//self.cell_size -1, self.delivery_zone["position"][1]//self.cell_size -1)
             chemin = [start_point]
             # On rajoute chaque case dans l'ordre, en faisant le tour dans le sens trigonométrique
             chemin.extend([(start_point[0]+i, start_point[1]) for i in range(1, zncl+2)])
             chemin.extend([(start_point[0]+zncl+1, start_point[1]+i) for i in range(1, znch+2)])
-            chemin.extend([(start_point[0]+zncl+1-i, start_point[1]) for i in range(1, zncl+2)])
-            chemin.extend([(start_point[0], start_point[1]+znch+1-i) for i in range(1, znch+2)])
+            chemin.extend([(start_point[0]+zncl+1-i, start_point[1]+znch+1) for i in range(1, zncl+2)])
+            chemin.extend([(start_point[0], start_point[1]+znch+1-i) for i in range(1, znch+1)])
 
             # Si on se trouve déjà sur le chemin avec la longueur suffisante, il ne reste plus qu'à tourner
             if self.our_len == condition_len:
                 if self.our_head in chemin:
                     # On désactive l'aura
                     self.aura = []
-                    return chemin[chemin.index(self.our_head) + 1]
+                    return chemin[(chemin.index(self.our_head) + 1)%len(chemin)]
 
                 # On détermine le point de "chemin" le plus proche
                 point_target = chemin[0]
@@ -185,20 +185,20 @@ class Agent(BaseAgent):
 
             # Si on a pas encore la longueur optimale, il faut cibler les passagers
             # On enlève les passagers trop volumineux en se rapprochant de condition_len
-            if self.our_len == condition_len - 2:
-                for i, val in enumerate(passen_value):
-                    if val == 3:
-                        passen_value[i] = -10000
                 
             if self.our_len == condition_len - 1:
                 for i, val in enumerate(passen_value):
-                    if val >= 2:
+                    if val > 2:
                         passen_value[i] = -10000
 
             # Si il n'y a que des passagers trop lourds, on attends que d'autres apparaissent, en attendant au centre
             if [-10000 for p in range(len(passen_value))] == passen_value:
+                # On veut éviter les passagers
+                self.opponent_loc.extend(passen_loc)
                 return (self.game_width//40, self.game_height//40)
-
+            
+            if self.our_len == condition_len + 1:
+                return Move.DROP
 
             weight_passen = []
             for w in range(len(passagers)): # Coefficient augmenté pour la valeur du passager
@@ -219,6 +219,7 @@ class Agent(BaseAgent):
         self.target = None
 
         # end_game_protocol check:
+        # On vérifie que la zone n est pas collée aux limites du terrain 
         last_case = (self.zone_loc[0][0] + znch -1, self.zone_loc[0][1] +zncl -1)
         if 0 in self.zone_loc[0] or self.game_height//self.cell_size -1 in self.zone_loc[0] or self.game_width//self.cell_size -1 in self.zone_loc[0]:
             lim_check = False
@@ -226,8 +227,6 @@ class Agent(BaseAgent):
             lim_check = False
         else:
             lim_check = True
-        if lim_check and self.best_scores[self.nickname] + 0.8*self.our_len > max([self.best_scores[p]for p in self.autre_nicknames]) + 15:
-            self.target = end_game_protocol()
 
         # In-zone-handler
         elif self.our_len != 0 and self.our_head in self.zone_loc:
@@ -259,8 +258,53 @@ class Agent(BaseAgent):
                 self.target = passen_loc[weight_passen.index(max(weight_passen))]
             
 >>>>>>> a6a0942a55e157f58974f2c29419f8b30dc2efe5
+=======
+        # On vérifie au préalable que best scores a été initialisé, pour ne pas avoir d'erreur ensuite
+        if lim_check and self.best_scores.get(self.nickname):
+            oppo_best_scores = []
+            for i in self.autre_nicknames:
+                if self.best_scores.get(i):
+                    oppo_best_scores.append(self.best_scores[i])
+                else:
+                    oppo_best_scores.append(0)
+            
+            # Verification of all conditions:
+            if self.best_scores[self.nickname] + 1.5*self.our_len > max(oppo_best_scores) + 5:
+                self.target = end_game_protocol()
+
+        
+        if not self.target: # On regarde si la partie précédente s'est déclenchée
+
+            # In-zone-handler   
+            if self.our_len != 0 and self.our_head in self.zone_loc:
+                for g in self.zone_loc:
+                    if g == self.our_head or g in self.our_loc or g in self.opponent_loc:
+                        continue
+                    self.target = list(g)
+                    break
+                if not self.target: # Si toutes les cases de zone sont occupées
+                    self.target = self.zone_loc[0]
+
+            # Determinig next target (basic case):
+            else:
+                weight_zone = 7**self.our_len - d_zmin if self.our_len != 0 else -100000 #7 et 4 passagers => on priorise un passager à 2 de dist même si nous collé à la zone
+                # Three parameters to target a passenger: their distance, value and the distance with the opponent's head.
+                weight_passen = []
+                for w in range(len(passagers)):
+                    x = -2497.5*d_passen[w] + 7502.5*passen_value[w] if d_passen[w] != 0 else -100000
+                    weight_passen.append(x)
+
+                # Détermination de la target
+                if weight_zone >= max(weight_passen):
+                    self.target = self.zone_min
+                else:
+                    self.target = passen_loc[weight_passen.index(max(weight_passen))]
+
+
         """ Détermination des directions idéales """
-        if self.our_head[0] - self.target[0] < 0:
+        if self.target == Move.DROP:
+            return Move.DROP
+        elif self.our_head[0] - self.target[0] < 0:
             if self.our_head[1] - self.target[1] < 0:
                 ideal_directions = ("right","down")
             elif self.our_head[1] - self.target[1] > 0:
@@ -301,44 +345,50 @@ class Agent(BaseAgent):
 
         - 4 Return final
         '''
-
         # Partie 1: Direction prioritaire + Déterminer les "autres directions", soient les directions "possibles"
         # mais pas prioritaires (pas de return ici) 
-        if self.cur_dir not in ideal_directions: # Means there can be only one of the "good" directions we can go
-            
-            if ideal_directions[1] is not None: # != None, means the target is on a diagonal (two directions "wanted")
-                if ideal_directions[0] == self.dict_opposite_dir[self.cur_dir]:
-                    other_directions = [self.cur_dir, self.dict_opposite_dir[ideal_directions[1]]] # Les deux autres directions possibles
-                    directions = [ideal_directions[1], None]
-                else: # directions[1] == dict_opposite_dir[self.cur_dir]
-                    other_directions = [self.cur_dir, self.dict_opposite_dir[ideal_directions[0]]]
-                    directions = [ideal_directions[0], None]
-            
-            else: # Two possibilities: the target is next to us, or behind us (both on "strait line")
-                if self.cur_dir == self.dict_opposite_dir[ideal_directions[0]]: # It's behind us: we have to go back
-                    other_directions = [self.cur_dir, None]
-                    if self.cur_dir == "up" or self.cur_dir == "down":
-                        directions = ["right","left"]
-                    else:
-                        directions = ["up","down"]
-                else: # We don't change the tuple "directions", as we can go there: just have to change "other_directions"
-                    directions = list(ideal_directions)
-                    other_directions = [self.cur_dir, self.dict_opposite_dir[ideal_directions[0]]]
+        if not ideal_directions == Move.DROP:
+            if self.cur_dir not in ideal_directions: # Means there can be only one of the "good" directions we can go
+                
+                if ideal_directions[1] is not None: # != None, means the target is on a diagonal (two directions "wanted")
+                    if ideal_directions[0] == self.dict_opposite_dir[self.cur_dir]:
+                        other_directions = [self.cur_dir, self.dict_opposite_dir[ideal_directions[1]]] # Les deux autres directions possibles
+                        directions = [ideal_directions[1], None]
+                    else: # directions[1] == dict_opposite_dir[self.cur_dir]
+                        other_directions = [self.cur_dir, self.dict_opposite_dir[ideal_directions[0]]]
+                        directions = [ideal_directions[0], None]
+                
+                else: # Two possibilities: the target is next to us, or behind us (both on "strait line")
+                    if self.cur_dir == self.dict_opposite_dir[ideal_directions[0]]: # It's behind us: we have to go back
+                        other_directions = [self.cur_dir, None]
+                        if self.cur_dir == "up" or self.cur_dir == "down":
+                            directions = ["right","left"]
+                        else:
+                            directions = ["up","down"]
+                    else: # We don't change the tuple "directions", as we can go there: just have to change "other_directions"
+                        directions = list(ideal_directions)
+                        other_directions = [self.cur_dir, self.dict_opposite_dir[ideal_directions[0]]]
 
-        else: # Means that we can go in (both) direction(s) and that we are already going the right way
-            if ideal_directions[1]: # Target on diagonal
-                directions = list(ideal_directions)
-                if self.cur_dir == ideal_directions[0]:
-                    other_directions = [self.dict_opposite_dir[ideal_directions[1]], None]
-                    
-                else: # self.cur_dir == directions[1]
-                    other_directions = [self.dict_opposite_dir[ideal_directions[0]], None]
-            else: # If target is not on a diagonal, it means we're rushing toward it
-                directions = [ideal_directions[0], None]    
-                if self.cur_dir == "up" or self.cur_dir == "down":
-                    other_directions = ["right","left"]
-                else:
-                    other_directions = ["up","down"] 
+            else: # Means that we can go in (both) direction(s) and that we are already going the right way
+                if ideal_directions[1]: # Target on diagonal
+                    directions = list(ideal_directions)
+                    if self.cur_dir == ideal_directions[0]:
+                        other_directions = [self.dict_opposite_dir[ideal_directions[1]], None]
+                        
+                    else: # self.cur_dir == directions[1]
+                        other_directions = [self.dict_opposite_dir[ideal_directions[0]], None]
+                else: # If target is not on a diagonal, it means we're rushing toward it
+                    directions = [ideal_directions[0], None]    
+                    if self.cur_dir == "up" or self.cur_dir == "down":
+                        other_directions = ["right","left"]
+                    else:
+                        other_directions = ["up","down"] 
+        else: # On veut drop un passager
+            directions = [self.cur_dir, None]
+            if self.cur_dir == "up" or self.cur_dir == "down":
+                other_directions = ["right","left"]
+            else:
+                other_directions = ["up","down"] 
         
         # Partie 2: Danger imminent (pas de return: check "danger potentiel" avant?)
         # We have to check both directions, starting by the first given by the variable "directions"
@@ -415,7 +465,9 @@ class Agent(BaseAgent):
         # Return part (if no return before)
         r = random.randint(0,1)
         if directions[0]: # != None: means there is still a priority direction available
-            if directions[1]:
+            if ideal_directions == Move.DROP:
+                return Move.DROP
+            elif directions[1]:
                 return self.dict_str_to_command[directions[r]]
             else:
                 return self.dict_str_to_command[directions[0]]
