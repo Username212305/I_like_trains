@@ -1,6 +1,7 @@
 from common.base_agent import BaseAgent
 from common.move import Move
 import random
+import math
 
 class Agent(BaseAgent):
 
@@ -208,8 +209,12 @@ class Agent(BaseAgent):
 
 
         ''' Beginning of the method: we'll compact the parameters into two variables: one for each
-        "target a passenger" choice, and one for the "target zone" choice.'''
-
+            "target a passenger" choice, and one for the "target zone" choice.'''
+            
+            # Deciding section:
+            # In-zone handler, in case we are in the zone and still need to let passengers:
+            # We call a variable "d" to gain space: its the distance on (x, y) between the first corner point
+            # of the zone and us
         self.target = None
 
         # end_game_protocol check:
@@ -221,6 +226,32 @@ class Agent(BaseAgent):
             lim_check = False
         else:
             lim_check = True
+
+        # In-zone-handler
+        if self.our_len != 0 and self.our_head in self.zone_loc:
+            for i in self.zone_loc:
+                if i == self.our_head or i in self.our_loc or i in self.opponent_loc:
+                    continue
+                self.target = list(i)
+                break
+            if not self.target: # Si toutes les cases de zone sont occupées
+                self.target = self.zone_loc[0]
+
+        # Determinig next target (basic case):
+        else:
+            weight_zone = 7**self.our_len - d_zmin if self.our_len != 0 else -100000 #7 et 4 passagers => on priorise un passager à 2 de dist même si nous collé à la zone
+            # Three parameters to target a passenger: their distance, value and the distance with the opponent's head.
+            weight_passen = []
+            for w in range(len(passagers)):
+                x = -2497.5*d_passen[w] + 7502.5*passen_value[w] if d_passen[w] != 0 else -100000
+                weight_passen.append(x)
+
+            # Détermination de la target
+            if weight_zone >= max(weight_passen):
+                self.target = self.zone_min
+            else:
+                self.target = passen_loc[weight_passen.index(max(weight_passen))]
+            
 
         # On vérifie au préalable que best scores a été initialisé, pour ne pas avoir d'erreur ensuite
         if lim_check and self.best_scores.get(self.nickname):
@@ -262,6 +293,7 @@ class Agent(BaseAgent):
                     self.target = self.zone_min
                 else:
                     self.target = passen_loc[weight_passen.index(max(weight_passen))]
+
 
         """ Détermination des directions idéales """
         if self.target == Move.DROP:
@@ -422,6 +454,7 @@ class Agent(BaseAgent):
         print("ideal_directions: ", ideal_directions, " | ","directions: ",directions, " | ", "other_directions: ", other_directions)
         print("aura: ",self.aura)
         print("opponent_loc: ",self.opponent_loc, " | ", "our_loc: ",self.our_loc)
+        
         
         # Return part (if no return before)
         r = random.randint(0,1)
