@@ -1,7 +1,7 @@
 from common.base_agent import BaseAgent
 from common.move import Move
 import random
-import math
+
 
 class Agent(BaseAgent):
 
