@@ -229,7 +229,7 @@ class Agent(BaseAgent):
             lim_check = True
 
         # In-zone-handler
-        elif self.our_len != 0 and self.our_head in self.zone_loc:
+        if self.our_len != 0 and self.our_head in self.zone_loc:
             for i in self.zone_loc:
                 if i == self.our_head or i in self.our_loc or i in self.opponent_loc:
                     continue
@@ -251,14 +251,9 @@ class Agent(BaseAgent):
             if weight_zone >= max(weight_passen):
                 self.target = self.zone_min
             else:
-<<<<<<< HEAD
-                self.target = passen_loc[index]
-        print(weight_zone, weight_passen)   
-=======
                 self.target = passen_loc[weight_passen.index(max(weight_passen))]
             
->>>>>>> a6a0942a55e157f58974f2c29419f8b30dc2efe5
-=======
+
         # On vérifie au préalable que best scores a été initialisé, pour ne pas avoir d'erreur ensuite
         if lim_check and self.best_scores.get(self.nickname):
             oppo_best_scores = []
