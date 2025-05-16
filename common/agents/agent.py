@@ -2,7 +2,8 @@ from common.base_agent import BaseAgent
 from common.move import Move
 import random
 
-
+#128.179.154.221
+#127.0.0.1
 class Agent(BaseAgent):
 
     ''' Beginning of the code:
