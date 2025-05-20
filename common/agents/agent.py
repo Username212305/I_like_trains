@@ -479,5 +479,11 @@ class Agent(BaseAgent):
                 return self.dict_str_to_command[other_directions[1]]
   
     def get_move(self):
-
-        return self.adapt_path(self.main_path())
+        
+        path = self.main_path()
+        move = self.adapt_path(path)
+        if move:
+            return move
+        else:
+            self.aura = []
+            return self.adapt_path(path)
