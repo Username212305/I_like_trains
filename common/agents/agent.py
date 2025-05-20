@@ -390,9 +390,9 @@ class Agent(BaseAgent):
         # The priority direction:
         if not self.is_alone:
             def out_of_bounds(coordinates):
-                if coordinates[0] > 21 or coordinates[0] < 0:
+                if coordinates[0] > self.game_width//self.cell_size or coordinates[0] < 0:
                     return True
-                if coordinates[1] > 21 or coordinates[1] < 0:
+                if coordinates[1] > self.game_height//self.cell_size or coordinates[1] < 0:
                     return True
                 return False
             
