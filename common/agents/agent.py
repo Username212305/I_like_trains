@@ -210,23 +210,13 @@ class Agent(BaseAgent):
 
 
         ''' Beginning of the method: we'll compact the parameters into two variables: one for each
-            "target a passenger" choice, and one for the "target zone" choice.'''
-            
-            # Deciding section:
-            # In-zone handler, in case we are in the zone and still need to let passengers:
-            # We call a variable "d" to gain space: its the distance on (x, y) between the first corner point
-            # of the zone and us
+        "target a passenger" choice, and one for the "target zone" choice.'''
+        
+        # Deciding section:
+        # In-zone handler, in case we are in the zone and still need to let passengers:
+        # We call a variable "d" to gain space: its the distance on (x, y) between the first corner point
+        # of the zone and us
         self.target = None
-
-        # end_game_protocol check:
-        # On vérifie que la zone n est pas collée aux limites du terrain 
-        last_case = (self.zone_loc[0][0] + znch -1, self.zone_loc[0][1] +zncl -1)#TODO verifier formule
-        if 0 in self.zone_loc[0] or self.game_height//self.cell_size -1 in self.zone_loc[0] or self.game_width//self.cell_size -1 in self.zone_loc[0]:
-            lim_check = False
-        elif self.game_height//self.cell_size -1 in last_case or self.game_width//self.cell_size -1 in last_case:
-            lim_check = False
-        else:
-            lim_check = True
 
         # In-zone-handler
         if self.our_len != 0 and self.our_head in self.zone_loc:
@@ -252,48 +242,31 @@ class Agent(BaseAgent):
                 self.target = self.zone_min
             else:
                 self.target = passen_loc[weight_passen.index(max(weight_passen))]
-            
 
-        # On vérifie au préalable que best scores a été initialisé, pour ne pas avoir d'erreur ensuite
-        if lim_check and self.best_scores.get(self.nickname):
+
+            
+        # end_game_protocol check:
+        # On vérifie que la zone n est pas collée aux limites du terrain, et qu'il y a un seul adversaire, puis
+        # que best scores a été initialisé, pour ne pas avoir d'erreur ensuite
+        last_case = (self.zone_loc[0][0] + znch -1, self.zone_loc[0][1] +zncl -1) # Case "en bas à droite" de la zone (opposée à zone_loc[0])
+        if 0 in self.zone_loc[0] or self.game_height//self.cell_size -1 in self.zone_loc[0] or self.game_width//self.cell_size -1 in self.zone_loc[0]:
+            conditions_check = False
+        elif self.game_height//self.cell_size -1 in last_case or self.game_width//self.cell_size -1 in last_case:
+            conditions_check = False
+        elif len(self.autre_nicknames) != 1:
+            conditions_check = False
+        else:
+            conditions_check = True
+        if conditions_check and self.best_scores.get(self.nickname):
             oppo_best_scores = []
             for i in self.autre_nicknames:
                 if self.best_scores.get(i):
                     oppo_best_scores.append(self.best_scores[i])
                 else:
                     oppo_best_scores.append(0)
-            
-            # Verification of all conditions: (+ 1.5*self.our_len)
+            # Verification of all conditions:
             if self.best_scores[self.nickname]  > max(oppo_best_scores) + 15:
                 self.target = end_game_protocol()
-
-        
-        if not self.target: # On regarde si la partie précédente s'est déclenchée
-
-            # In-zone-handler   
-            if self.our_len != 0 and self.our_head in self.zone_loc:
-                for g in self.zone_loc:
-                    if g == self.our_head or g in self.our_loc or g in self.opponent_loc:
-                        continue
-                    self.target = list(g)
-                    break
-                if not self.target: # Si toutes les cases de zone sont occupées
-                    self.target = self.zone_loc[0]
-
-            # Determinig next target (basic case):
-            else:
-                weight_zone = 7**self.our_len - d_zmin if self.our_len != 0 else -100000 #7 et 4 passagers => on priorise un passager à 2 de dist même si nous collé à la zone
-                # Three parameters to target a passenger: their distance, value and the distance with the opponent's head.
-                weight_passen = []
-                for w in range(len(passagers)):
-                    x = -2497.5*d_passen[w] + 7502.5*passen_value[w] if d_passen[w] != 0 else -100000
-                    weight_passen.append(x)
-
-                # Détermination de la target
-                if weight_zone >= max(weight_passen):
-                    self.target = self.zone_min
-                else:
-                    self.target = passen_loc[weight_passen.index(max(weight_passen))]
 
 
         """ Détermination des directions idéales """
@@ -453,7 +426,7 @@ class Agent(BaseAgent):
         
         
         r = random.randint(0,1) # Facteur aléatoire, si les deux mouvements d'une catégorie sont possible
-        
+
         if directions[0]: # On return en priorité un move de "directions"
             if ideal_directions == Move.DROP:
                 return Move.DROP
