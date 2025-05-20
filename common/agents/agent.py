@@ -220,7 +220,7 @@ class Agent(BaseAgent):
 
         # end_game_protocol check:
         # On vérifie que la zone n est pas collée aux limites du terrain 
-        last_case = (self.zone_loc[0][0] + znch -1, self.zone_loc[0][1] +zncl -1)
+        last_case = (self.zone_loc[0][0] + znch -1, self.zone_loc[0][1] +zncl -1)#TODO verifier formule
         if 0 in self.zone_loc[0] or self.game_height//self.cell_size -1 in self.zone_loc[0] or self.game_width//self.cell_size -1 in self.zone_loc[0]:
             lim_check = False
         elif self.game_height//self.cell_size -1 in last_case or self.game_width//self.cell_size -1 in last_case:
@@ -263,8 +263,8 @@ class Agent(BaseAgent):
                 else:
                     oppo_best_scores.append(0)
             
-            # Verification of all conditions:
-            if self.best_scores[self.nickname] + 1.5*self.our_len > max(oppo_best_scores) + 5:
+            # Verification of all conditions: (+ 1.5*self.our_len)
+            if self.best_scores[self.nickname]  > max(oppo_best_scores) + 15:
                 self.target = end_game_protocol()
 
         
