@@ -412,25 +412,23 @@ class Agent(BaseAgent):
                     # Then we want the other priority direction, or if it doesn't exist, one of other_directions
 
 
-        # Partie 3: Danger futur
-        def loop_trap(coordinates):
-            '''On lance cette fonction lorsqu'on s'apprête à avancer sur notre propre corps, et que les cases à
+        # Partie 3: Danger futur + Return part
+        def loop_trap(movement):
+            '''On lance cette fonction lorsqu'on s'apprête à avancer sur une case dangereuse, et que les cases à
             gauche et à droite sont libres: il faut vérifier que la direction qu'on s'apprête à prendre ne va pas
-            nous coincer dans un piège où l'on s'enroulerait sur nous même.
-            Elle prend les coordonnées de la case sur laquelle on "voudrait aller", et check les cases autour:
-            on forme une "frontière" sur les cases libres qui sont checkées pour la première fois (la frontière s'éloigne
-            petit à petit de la case de départ). Si au bout de 4 itérations, il existe toujours des cases libres au delà 
-            de la frontière, on considère que aller sur lacase de départ est safe. Au contraire, si à un moment il n'y
-            a plus de cases dans la frontiere, c'est que toutes les cases "au-delà" de notre frontière précédente sont
-            obstruées: c'est un piège'''
+            nous coincer dans un piège où on se retrouverait bloqué entre nous-même, l(es) adversaire(s) ou un mur.
+            Elle prend les coordonnées de la case sur laquelle on "voudrait aller", check les cases autour, et crée une
+            "frontière" sur les cases libres qui sont checkées pour la première fois (ainsi, la frontière s'éloigne
+            petit à petit de la case de départ). Si au bout de 4 itérations, il existe toujours des cases dans 
+            frontere_nouvelle, on considère qu'il n'y a pas de piège pour la direction donnée. Au contraire, si après une
+            itération il n'y a plus de cases dans frontiere_nouvelle, c'est que toutes les cases "au-delà" de notre frontière
+            précédente sont obstruées: c'est un piège'''
 
-            # On vérifie au préalable que les conditions du piège sont favorables:
-            
-            cases_check = [coordinates] # L'ensembles des cases qui ont été parcourues
-            frontiere_precedente = [coordinates] # Les cases parcourues dans la dernière itération
+            cases_check = [movement] # L'ensembles des cases qui ont été parcourues
+            frontiere_precedente = [movement] # Les cases parcourues dans la dernière itération
             frontiere_nouvelle = [] # Les cases de la prochaine frontière de vérification
 
-            for k in range(4): # On limite notre nombre d'itérations de la fonction à 4
+            for k in range(4): # On limite le nombre d'itérations de la fonction à 4 (pour éviter de surcharger le serveur)
 
                 for j in frontiere_precedente: # On réitère le programme pour chaque case de la frontière actuelle
                     for i in [(j[0] + x, j[1] + y) for x in range(-1,2) for y in range(-1,2)]: # On parcours toutes les cases autour de la cible
@@ -439,9 +437,6 @@ class Agent(BaseAgent):
                             frontiere_nouvelle.append(i)
                             cases_check.append(i)
                     
-                if len(cases_check) > 10: # arret prématuré si jamais il y a beaucoup de cases safe
-                    return False
-
                 if not frontiere_nouvelle: # Si aucune case n'est ajoutée à la nouvelle frontiere, c est qu il n y a plus de case libre
                     return True
                 
@@ -457,29 +452,60 @@ class Agent(BaseAgent):
         print("opponent_loc: ",self.opponent_loc, " | ", "our_loc: ",self.our_loc)
         
         
-        # Return part (if no return before)
-        r = random.randint(0,1)
-        if directions[0]: # != None: means there is still a priority direction available
+        r = random.randint(0,1) # Facteur aléatoire, si les deux mouvements d'une catégorie sont possible
+        
+        if directions[0]: # On return en priorité un move de "directions"
             if ideal_directions == Move.DROP:
                 return Move.DROP
-            elif directions[1]:
-                return self.dict_str_to_command[directions[r]]
+            if directions[1]:
+                #Loop trap check
+                if directions[r] != self.cur_dir: # On active loop_trap seulement si on ne peut pas aller tout droit (cas fréquent)
+                    if not loop_trap(directions[r]):
+                        return self.dict_str_to_command[directions[r]]
+                    # Else: on continue à check
+                    
+                else: # On laisse passer si directions[r] va tout droit
+                    return self.dict_str_to_command[directions[r]]
             else:
-                return self.dict_str_to_command[directions[0]]
-        elif directions[1]: 
-            return self.dict_str_to_command[directions[1]]
+                #Loop trap check
+                if directions[0] != self.cur_dir: # On active loop_trap seulement si on ne peut pas aller tout droit (cas fréquent)
+                    if not loop_trap(directions[0]):
+                        return self.dict_str_to_command[directions[0]]
+                    # Else: on continue à check
+        if directions[1]:
+            #Loop trap check
+            if directions[1] != self.cur_dir: # On active loop_trap seulement si on ne peut pas aller tout droit (cas fréquent)
+                if not loop_trap(directions[1]):
+                    return self.dict_str_to_command[directions[1]]
+                # Else: on continue à check
+            else:
+                return self.dict_str_to_command[directions[1]]
         
-        else: # There is no "best" direction available, we have to escape in another
-            if other_directions[0]:
-                if other_directions[1]:
-                    return self.dict_str_to_command[other_directions[r]]
+        # Il n'y a plus de direction "prioritaire": on doit fuir ailleurs
+        if other_directions[0]:
+            if other_directions[1]:
+                #Loop trap check
+                if other_directions[r] != self.cur_dir: # On active loop_trap seulement si on ne peut pas aller tout droit (cas fréquent)
+                    if not loop_trap(directions[r]):
+                        return self.dict_str_to_command[directions[r]]
+                    # Else: on continue à check
                 else:
-                    return self.dict_str_to_command[other_directions[0]]
+                    return self.dict_str_to_command[other_directions[r]]
+                
+            # Il n'y a plus qu'une direction possible (other_directions[0] ou [1]) ou aucune (return None)
             else:
-                return self.dict_str_to_command[other_directions[1]]
-  
+                return self.dict_str_to_command[other_directions[0]]
+        else:
+            return self.dict_str_to_command[other_directions[1]]
+
+
     def get_move(self):
-        
+        '''get_move appelle les autres méthodes de la classe agent. Si jamais adapt_path a éliminé tous les
+        mouvements "possibles" (car danger imminent / potentiel partout), on relance une itération de la méthode
+        en désactivant l'aura pour essayer de rendre un mouvement "possible" (dans le cas où l'on se trouverait à
+        proximité de la tête adverse), et ainsi nous laisser une chance de survivre ou de tuer l'adversaire avec
+        nous.'''
+
         path = self.main_path()
         move = self.adapt_path(path)
         if move:
