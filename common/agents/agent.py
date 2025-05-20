@@ -195,14 +195,14 @@ class Agent(BaseAgent):
             if [-10000 for p in range(len(passen_value))] == passen_value:
                 # On veut éviter les passagers
                 self.opponent_loc.extend(passen_loc)
-                return (self.game_width//40, self.game_height//40)
+                return (self.game_width//(2* self.cell_size), self.game_height//(2* self.cell_size))
             
             if self.our_len == condition_len + 1:
                 return Move.DROP
 
             weight_passen = []
             for w in range(len(passagers)): # Coefficient augmenté pour la valeur du passager
-                x = -2497.5*d_passen[w] + 10000*passen_value[w] if d_passen[w] != 0 else -100000
+                x = -1666*d_passen[w] + 10000 + 1850*passen_value[w] + (d_oppo_passen[w]-d_passen[w])*3*1666 if d_passen[w] != 0 else -100000
                 weight_passen.append(x)
             
             return passen_loc[weight_passen.index(max(weight_passen))]
@@ -240,11 +240,11 @@ class Agent(BaseAgent):
 
         # Determinig next target (basic case):
         else:
-            weight_zone = 7**self.our_len - d_zmin if self.our_len != 0 else -100000 #7 et 4 passagers => on priorise un passager à 2 de dist même si nous collé à la zone
+            weight_zone = 10**self.our_len - 5*d_zmin if self.our_len != 0 else -100000 
             # Three parameters to target a passenger: their distance, value and the distance with the opponent's head.
             weight_passen = []
             for w in range(len(passagers)):
-                x = -2497.5*d_passen[w] + 7502.5*passen_value[w] if d_passen[w] != 0 else -100000
+                x = -1666*d_passen[w] + 10000 + 850*passen_value[w] + (d_oppo_passen[w]-d_passen[w])*3*1666 + 1/(d_passen[w]-0.99999) if d_passen[w] != 0 else -100000
                 weight_passen.append(x)
 
             # Détermination de la target
@@ -282,11 +282,11 @@ class Agent(BaseAgent):
 
             # Determinig next target (basic case):
             else:
-                weight_zone = 7**self.our_len - d_zmin if self.our_len != 0 else -100000 #7 et 4 passagers => on priorise un passager à 2 de dist même si nous collé à la zone
+                weight_zone = 10**self.our_len - 5*d_zmin if self.our_len != 0 else -100000 #7 et 4 passagers => on priorise un passager à 2 de dist même si nous collé à la zone
                 # Three parameters to target a passenger: their distance, value and the distance with the opponent's head.
                 weight_passen = []
                 for w in range(len(passagers)):
-                    x = -2497.5*d_passen[w] + 7502.5*passen_value[w] if d_passen[w] != 0 else -100000
+                    x = -1666*d_passen[w] + 10000 + 850*passen_value[w] + (d_oppo_passen[w]-d_passen[w])*3*1666 + 1/(d_passen[w]-0.99999) if d_passen[w] != 0 else -100000
                     weight_passen.append(x)
 
                 # Détermination de la target
@@ -450,11 +450,11 @@ class Agent(BaseAgent):
             return False
 
         '''print zone'''
-        print("---------------")
-        print("target: ",self.target, " | ", "cur_dir: ",self.cur_dir, " | ", "our_head: ", self.our_head)
-        print("ideal_directions: ", ideal_directions, " | ","directions: ",directions, " | ", "other_directions: ", other_directions)
-        print("aura: ",self.aura)
-        print("opponent_loc: ",self.opponent_loc, " | ", "our_loc: ",self.our_loc)
+        #print("---------------")
+        #print("target: ",self.target, " | ", "cur_dir: ",self.cur_dir, " | ", "our_head: ", self.our_head)
+        #print("ideal_directions: ", ideal_directions, " | ","directions: ",directions, " | ", "other_directions: ", other_directions)
+        #print("aura: ",self.aura)
+        #print("opponent_loc: ",self.opponent_loc, " | ", "our_loc: ",self.our_loc)
         
         
         # Return part (if no return before)
