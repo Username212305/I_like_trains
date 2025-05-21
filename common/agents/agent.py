@@ -152,62 +152,18 @@ class Agent(BaseAgent):
                 all_distances_passen_oppo.append(abs(passen_loc[j][0] - head[0]) + abs(passen_loc[j][1] - head[1]))
             d_oppo_passen.append(min(all_distances_passen_oppo)) # correspond aux distances minimales de chaque passager avec l'adversaire le plus proche d'eux
         
-        def end_game_protocol():
-            '''This function is called when we have advance at best_scores. It asks our train to stay around
-            the zone, and prohibits the others to earn points.'''
-            condition_len = (zncl + znch)*2 + 2
-            start_point = (self.delivery_zone["position"][0]//self.cell_size -1, self.delivery_zone["position"][1]//self.cell_size -1)
-            chemin = [start_point]
-            # On rajoute chaque case dans l'ordre, en faisant le tour dans le sens trigonométrique
-            chemin.extend([(start_point[0]+i, start_point[1]) for i in range(1, zncl+2)])
-            chemin.extend([(start_point[0]+zncl+1, start_point[1]+i) for i in range(1, znch+2)])
-            chemin.extend([(start_point[0]+zncl+1-i, start_point[1]+znch+1) for i in range(1, zncl+2)])
-            chemin.extend([(start_point[0], start_point[1]+znch+1-i) for i in range(1, znch+1)])
+        def code_47():
+            '''Cette fonction est appellée lorsque l'écart de best score avec l'adversaire est assez grand:
+            la stratégie consiste alors à tuer l'adversaire en boucle en fonçant sur sa tête.'''
 
-            # Si on se trouve déjà sur le chemin avec la longueur suffisante, il ne reste plus qu'à tourner
-            if self.our_len == condition_len:
-                if self.our_head in chemin:
-                    # On désactive l'aura
-                    self.aura = []
-                    return chemin[(chemin.index(self.our_head) + 1)%len(chemin)]
+            '''if self.our_len >= 1 and : # Countdown condition
+                return Move.DROP'''
 
-                # On détermine le point de "chemin" le plus proche
-                point_target = chemin[0]
-                dist_point_min = 10000
-                for i, point in enumerate(chemin):
-                    if abs(point[0]-self.our_head[0]) + abs(point[1]-self.our_head[1]) < dist_point_min:
-                        point_target = point
+            return
 
-                # On veut éviter les passagers
-                self.opponent_loc.extend(passen_loc)
-
-                return point_target
-
-            # Si on a pas encore la longueur optimale, il faut cibler les passagers
-            # On enlève les passagers trop volumineux en se rapprochant de condition_len
-                
-            if self.our_len == condition_len - 1:
-                for i, val in enumerate(passen_value):
-                    if val > 2:
-                        passen_value[i] = -10000
-
-            # Si il n'y a que des passagers trop lourds, on attends que d'autres apparaissent, en attendant au centre
-            if [-10000 for p in range(len(passen_value))] == passen_value:
-                # On veut éviter les passagers
-                self.opponent_loc.extend(passen_loc)
-                return (self.game_width//40, self.game_height//40)
             
-            if self.our_len == condition_len + 1:
-                return Move.DROP
 
-            weight_passen = []
-            for w in range(len(passagers)): # Coefficient augmenté pour la valeur du passager
-                x = -2497.5*d_passen[w] + 10000*passen_value[w] if d_passen[w] != 0 else -100000
-                weight_passen.append(x)
             
-            return passen_loc[weight_passen.index(max(weight_passen))]
-
-
 
         ''' Beginning of the method: we'll compact the parameters into two variables: one for each
         "target a passenger" choice, and one for the "target zone" choice.'''
@@ -245,28 +201,17 @@ class Agent(BaseAgent):
 
 
             
-        # end_game_protocol check:
-        # On vérifie que la zone n est pas collée aux limites du terrain, et qu'il y a un seul adversaire, puis
-        # que best scores a été initialisé, pour ne pas avoir d'erreur ensuite
-        last_case = (self.zone_loc[0][0] + znch -1, self.zone_loc[0][1] +zncl -1) # Case "en bas à droite" de la zone (opposée à zone_loc[0])
-        if 0 in self.zone_loc[0] or self.game_height//self.cell_size -1 in self.zone_loc[0] or self.game_width//self.cell_size -1 in self.zone_loc[0]:
-            conditions_check = False
-        elif self.game_height//self.cell_size -1 in last_case or self.game_width//self.cell_size -1 in last_case:
-            conditions_check = False
-        elif len(self.autre_nicknames) != 1:
-            conditions_check = False
-        else:
-            conditions_check = True
-        if conditions_check and self.best_scores.get(self.nickname):
-            oppo_best_scores = []
-            for i in self.autre_nicknames:
-                if self.best_scores.get(i):
-                    oppo_best_scores.append(self.best_scores[i])
-                else:
-                    oppo_best_scores.append(0)
-            # Verification of all conditions:
-            if self.best_scores[self.nickname]  > max(oppo_best_scores) + 15:
-                self.target = end_game_protocol()
+        # Code_47 check:
+        # On vérifie qu'il y a un seul adversaire, puis que best scores a été initialisé, pour ne pas avoir d'erreur ensuite
+        if len(self.autre_nicknames) == 1 and self.best_scores.get(self.nickname):
+            # Check si best score adverse a été initialisé
+            if self.best_scores.get(self.autre_nicknames[0]):
+                oppo_best_score = self.best_scores[self.autre_nicknames[0]]
+            else:
+                oppo_best_score = 0
+
+            if self.best_scores[self.nickname]  > oppo_best_score + 15:
+                self.target = code_47()
 
 
         """ Détermination des directions idéales """
@@ -387,35 +332,40 @@ class Agent(BaseAgent):
 
         # Partie 3: Danger futur + Return part
         def loop_trap(movement):
-            '''On lance cette fonction lorsqu'on s'apprête à avancer sur une case dangereuse, et que les cases à
-            gauche et à droite sont libres: il faut vérifier que la direction qu'on s'apprête à prendre ne va pas
-            nous coincer dans un piège où on se retrouverait bloqué entre nous-même, l(es) adversaire(s) ou un mur.
-            Elle prend les coordonnées de la case sur laquelle on "voudrait aller", check les cases autour, et crée une
-            "frontière" sur les cases libres qui sont checkées pour la première fois (ainsi, la frontière s'éloigne
-            petit à petit de la case de départ). Si au bout de 4 itérations, il existe toujours des cases dans 
+            '''On lance cette fonction lorsqu'on s'apprête à tourner à gauche ou à droite: il faut vérifier que la direction
+            qu'on s'apprête à prendre ne va pas nous coincer dans un piège où on se retrouverait bloqué entre nous-même, l(es)
+            adversaire(s) ou un mur.
+            Elle prend en entrée le mouvement souhaité, le convertit en les coordonnées de la case correspondante, check les
+            cases autour, et crée une "frontière" sur les cases libres qui sont checkées pour la première fois (ainsi, la frontière
+            "s'éloigne" petit à petit de la case de départ). Si au bout de 4 itérations, il existe toujours des cases dans 
             frontere_nouvelle, on considère qu'il n'y a pas de piège pour la direction donnée. Au contraire, si après une
             itération il n'y a plus de cases dans frontiere_nouvelle, c'est que toutes les cases "au-delà" de notre frontière
             précédente sont obstruées: c'est un piège'''
 
-            cases_check = [movement] # L'ensembles des cases qui ont été parcourues
-            frontiere_precedente = [movement] # Les cases parcourues dans la dernière itération
+            # Conversion de movement (up,down,left,right) en les coordonnées de la prochaine case sur laquelle on cherche à aller
+            movement = (self.our_head[0] + self.dict_str_to_values[movement][0], self.our_head[1] + self.dict_str_to_values[movement][1])
+
+            cases_check = [movement] # L'ensembles des cases qui ont été parcourues (il ne faut pas les re-parcourir)
+            frontiere_precedente = [movement] # Les cases parcourues lors de la dernière itération
             frontiere_nouvelle = [] # Les cases de la prochaine frontière de vérification
 
             for k in range(4): # On limite le nombre d'itérations de la fonction à 4 (pour éviter de surcharger le serveur)
 
                 for j in frontiere_precedente: # On réitère le programme pour chaque case de la frontière actuelle
-                    for i in [(j[0] + x, j[1] + y) for x in range(-1,2) for y in range(-1,2)]: # On parcours toutes les cases autour de la cible
+                    for i in [[j[0] + x, j[1] + y] for x in range(-1,2) for y in range(-1,2)]: # On parcours toutes les cases autour de la cible
                         if not (i in cases_check or i in self.our_loc or i in self.opponent_loc or i == self.our_head or out_of_bounds(i)):
                             # On rajoute uniquement les cases libres, présente dans aucune des deux frontieres
                             frontiere_nouvelle.append(i)
                             cases_check.append(i)
                     
-                if not frontiere_nouvelle: # Si aucune case n'est ajoutée à la nouvelle frontiere, c est qu il n y a plus de case libre
+                if not frontiere_nouvelle: # Si aucune case n'a été ajoutée à la nouvelle frontiere, c est qu il n y a plus de case libre: c'est un piège
                     return True
                 
+                # On met à jour les frontières avant la prochaine itération
                 frontiere_precedente = frontiere_nouvelle
                 frontiere_nouvelle = []
-            return False
+    
+            return False # Si la fonction ne s'est pas arrêtée avant, il n'y a pas de piège
 
         '''print zone'''
         print("---------------")
@@ -459,8 +409,8 @@ class Agent(BaseAgent):
             if other_directions[1]:
                 #Loop trap check
                 if other_directions[r] != self.cur_dir: # On active loop_trap seulement si on ne peut pas aller tout droit (cas fréquent)
-                    if not loop_trap(directions[r]):
-                        return self.dict_str_to_command[directions[r]]
+                    if not loop_trap(other_directions[r]):
+                        return self.dict_str_to_command[other_directions[r]]
                     # Else: on continue à check
                 else:
                     return self.dict_str_to_command[other_directions[r]]
