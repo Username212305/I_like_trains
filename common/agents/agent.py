@@ -54,11 +54,11 @@ class Agent(BaseAgent):
                 self.cur_dir = "up"
         self.our_len = int(len(self.train["wagons"]))
         self.our_loc = [[i[0]//self.cell_size, i[1]//self.cell_size] for i in self.train["wagons"]]
-        self.our_head = (self.train["position"][0]//self.cell_size , self.train["position"][1]//self.cell_size)
+        self.our_head = [self.train["position"][0]//self.cell_size , self.train["position"][1]//self.cell_size]
 
 
         """ info sur delivery zone"""
-        self.zone_loc = [(self.delivery_zone["position"][0]//self.cell_size , self.delivery_zone["position"][1]//self.cell_size)] # zone_loc = [x,y] case de la zone de livraison
+        self.zone_loc = [[self.delivery_zone["position"][0]//self.cell_size , self.delivery_zone["position"][1]//self.cell_size]] # zone_loc = [x,y] case de la zone de livraison
         znch = self.delivery_zone["height"]//self.cell_size # zone_nb_case_haut
         zncl = self.delivery_zone["width"]//self.cell_size # zone_nb_case_large
         
@@ -69,16 +69,16 @@ class Agent(BaseAgent):
                         print()
                     case _:
                         for x in range(1,zncl):
-                            self.zone_loc.append((self.zone_loc[0][0]+x,self.zone_loc[0][1]))
+                            self.zone_loc.append([self.zone_loc[0][0]+x,self.zone_loc[0][1]])
             case _:
                 match zncl:
                     case 1:
                         for y in range(1,znch):
-                            self.zone_loc.append((self.zone_loc[0][0],self.zone_loc[0][1]+y))
+                            self.zone_loc.append([self.zone_loc[0][0],self.zone_loc[0][1]+y])
                     case _:
                         for y in range(1,znch):
                             for x in range(1,zncl):
-                                self.zone_loc.append((self.zone_loc[0][0] + x,self.zone_loc[0][1] + y)) # à voir si le dernier cas suffit pas, histoire de faire propre
+                                self.zone_loc.append([self.zone_loc[0][0] + x,self.zone_loc[0][1] + y]) # à voir si le dernier cas suffit pas, histoire de faire propre
 
         """d_zone elaborée"""
         d_zmin = abs(self.zone_loc[0][0] - self.our_head[0]) + abs(self.zone_loc[0][1] - self.our_head[1]) # distance zone de livraison case origine
@@ -98,7 +98,7 @@ class Agent(BaseAgent):
                 self.opp_len.append(len(self.autre[k]["wagons"]))
                 # opponent_loc a toutes les coordonnées des wagons de tous les adversaires (les coo ne sont pas "differenciées")
                 self.opponent_loc.extend([[i[0]//self.cell_size, i[1]//self.cell_size] for i in self.autre[k]["wagons"]])
-                self.opponent_head.append((self.autre[k]["position"][0]//self.cell_size,self.autre[k]["position"][1]//self.cell_size))
+                self.opponent_head.append([self.autre[k]["position"][0]//self.cell_size,self.autre[k]["position"][1]//self.cell_size])
             
             self.aura = []
             self.opp_cur_dir = []
@@ -144,7 +144,7 @@ class Agent(BaseAgent):
         d_passen = []
         d_oppo_passen = []
         for j in range(len(passagers)):
-            passen_loc.append((passagers[j]["position"][0]//self.cell_size, passagers[j]["position"][1]//self.cell_size))
+            passen_loc.append([passagers[j]["position"][0]//self.cell_size, passagers[j]["position"][1]//self.cell_size])
             passen_value.append(passagers[j]["value"])
             d_passen.append(abs(passen_loc[j][0] - self.our_head[0]) + abs(passen_loc[j][1] - self.our_head[1]))
             all_distances_passen_oppo = [] # Variable temporaire pour déterminer le minimum des valeurs de cette liste
@@ -424,7 +424,9 @@ class Agent(BaseAgent):
             frontere_nouvelle, on considère qu'il n'y a pas de piège pour la direction donnée. Au contraire, si après une
             itération il n'y a plus de cases dans frontiere_nouvelle, c'est que toutes les cases "au-delà" de notre frontière
             précédente sont obstruées: c'est un piège'''
-
+            
+            return False
+        
             cases_check = [movement] # L'ensembles des cases qui ont été parcourues
             frontiere_precedente = [movement] # Les cases parcourues dans la dernière itération
             frontiere_nouvelle = [] # Les cases de la prochaine frontière de vérification
