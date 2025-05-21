@@ -156,14 +156,24 @@ class Agent(BaseAgent):
             '''Cette fonction est appellée lorsque l'écart de best score avec l'adversaire est assez grand:
             la stratégie consiste alors à tuer l'adversaire en boucle en fonçant sur sa tête.'''
 
-            '''if self.our_len >= 1 and : # Countdown condition
-                return Move.DROP'''
-
-            return
-
+            # On passe à l'attaque si et seulement si on a aucun passager (maximisation de la vitesse)
+            if self.our_len >= 1:
+                if not self.train["boost_cooldown_active"]:
+                    return Move.DROP
+                return self.zone_min
             
+            # On vise la tête adverse
+            tar = self.opponent_head
 
-            
+            # On désactive l'esquive de l'aura et de la tête adverse
+            self.aura = []
+            self.opponent_head = None
+
+            # On évite les passagers
+            self.opponent_loc.extend(passen_loc)
+
+            return tar
+
 
         ''' Beginning of the method: we'll compact the parameters into two variables: one for each
         "target a passenger" choice, and one for the "target zone" choice.'''
@@ -386,15 +396,17 @@ class Agent(BaseAgent):
                     if not loop_trap(directions[r]):
                         return self.dict_str_to_command[directions[r]]
                     # Else: on continue à check
-                    
                 else: # On laisse passer si directions[r] va tout droit
                     return self.dict_str_to_command[directions[r]]
+                
             else:
                 #Loop trap check
                 if directions[0] != self.cur_dir: # On active loop_trap seulement si on ne peut pas aller tout droit (cas fréquent)
                     if not loop_trap(directions[0]):
                         return self.dict_str_to_command[directions[0]]
                     # Else: on continue à check
+                else:
+                    return self.dict_str_to_command[directions[0]]
         if directions[1]:
             #Loop trap check
             if directions[1] != self.cur_dir: # On active loop_trap seulement si on ne peut pas aller tout droit (cas fréquent)
