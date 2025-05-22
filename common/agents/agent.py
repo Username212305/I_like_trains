@@ -9,7 +9,7 @@ class Agent(BaseAgent):
     ''' '''
     
     def main_path(self):
-        '''Cette méthode est la première à être appelée: elle définie les variables utilisées dans l'ensemble
+        '''Cette méthode est la première à être appelée: elle définit les variables utilisées dans l'ensemble
         du code, détermine la prochaine cible et trouve les "mouvements à faire" (ideal_directions) pour l'atteindre.'''
 
 
