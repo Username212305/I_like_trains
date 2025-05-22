@@ -5,8 +5,13 @@ import random
 #128.179.154.221
 #127.0.0.1
 class Agent(BaseAgent):
-
-    ''' '''
+    '''Notre classe Agent comporte trois méthode:
+    - get_move(), qui lance les autres méthodes et rend le mouvement final;
+    - main_path(), qui définit les variables utilisées dans l'ensemble du code, détermine la prochaine cible
+    et trouve les "mouvements à faire" pour l'atteindre (ideal_directions);
+    - adapt_path(), qui trouve les directions qu'il est possible de faire parmi celles rendues par main_path
+    (les place comme "prioritaires"), et vérifie si chacune des directions qu'il est possible de faire est
+    dangereuse ou non, auquel cas elle la supprime de la liste de choix.'''
     
     def main_path(self):
         '''Cette méthode est la première à être appelée: elle définie les variables utilisées dans l'ensemble
@@ -73,7 +78,6 @@ class Agent(BaseAgent):
                         for y in range(1,znch):
                             for x in range(1,zncl):
                                 self.zone_loc.append([self.zone_loc[0][0] + x,self.zone_loc[0][1] + y]) # à voir si le dernier cas suffit pas, histoire de faire propre
-
         d_zmin = abs(self.zone_loc[0][0] - self.our_head[0]) + abs(self.zone_loc[0][1] - self.our_head[1]) # distance zone de livraison case origine
         self.zone_min = self.zone_loc[0]
         for i,c in enumerate(self.zone_loc):
@@ -331,7 +335,6 @@ class Agent(BaseAgent):
 
         '''Partie 2: '''
         if not self.is_alone:
-
             def out_of_bounds(coordinates):
                 '''Cette fonction prend en entrée les coordonnées d'une case, et renvoir True si la case est
                 hors des limites du terrain, False sinon'''
@@ -367,17 +370,14 @@ class Agent(BaseAgent):
                 return self.dict_str_to_command[directions[r]]
             else:
                 return self.dict_str_to_command[directions[0]]
-        
         if directions[1]: 
             return self.dict_str_to_command[directions[1]]
-        
         # Il n'y a plus de direction prioritaire possible: il faut prendre une direction de secours
         if other_directions[0]:
             if other_directions[1]:
                 return self.dict_str_to_command[other_directions[r]]
             else:
                 return self.dict_str_to_command[other_directions[0]]
-        
         # Dernier return, si tous les autres sont "None". On ne le vérifie pas puisque de toute façon on meurt si il est None.
         return self.dict_str_to_command[other_directions[1]]
 
