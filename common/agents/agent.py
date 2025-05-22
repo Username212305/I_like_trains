@@ -16,7 +16,7 @@ class Agent(BaseAgent):
         ''' ------------------------Definition section:------------------------'''
 
         """ Dictionaires utilisés pour la convertion de nos données """
-        self.dict_str_to_command = {"up":Move.UP, "down":Move.DOWN, "right":Move.RIGHT, "left":Move.LEFT}
+        self.dict_str_to_command = {"up":Move.UP, "down":Move.DOWN, "right":Move.RIGHT, "left":Move.LEFT, None : None}
         self.dict_str_to_values = {"up":(0,-1), "down":(0,1), "right":(1,0), "left":(-1,0)}
         self.dict_opposite_dir = {"up":"down","right":"left","down":"up","left":"right"}
 
@@ -191,11 +191,11 @@ class Agent(BaseAgent):
 
         '''Choix cas usuel'''
         if not self.target:
-            weight_zone = 7**self.our_len - d_zmin if self.our_len != 0 else -100000 #7 et 4 passagers => on priorise un passager à 2 de dist même si nous collé à la zone
+            weight_zone = 11**self.our_len - 3*d_zmin if self.our_len != 0 else -100000 
             # Three parameters to target a passenger: their distance, value and the distance with the opponent's head.
             weight_passen = []
             for w in range(len(passagers)):
-                x = -1666*d_passen[w] + 10000 + 850*passen_value[w] + (d_oppo_passen[w]-d_passen[w])*3*1666 + 1/(d_passen[w]-0.99999) if d_passen[w] != 0 else -100000
+                x = -1666*d_passen[w] + 10000 + 700*passen_value[w] + (d_oppo_passen[w]-d_passen[w])*2*1666 + 1/(d_passen[w]-0.999999) if d_passen[w] != 0 else -100000
                 weight_passen.append(x)
 
             # Détermination de la target
@@ -224,39 +224,11 @@ class Agent(BaseAgent):
             else:
                 oppo_best_score = 0 # Si ce n'est pas le cas, l'adversaire n'a encore marqué aucun point
 
-            if self.best_scores[self.nickname]  > oppo_best_score + ecart:
+            if self.best_scores[self.nickname]  > oppo_best_score + ecart and self.best_scores[self.nickname] >= 47:
                 self.target = code_47()
                 self.code_47_running = True
             else:
                 self.code_47_running = False
-
-        
-        if not self.target: # On regarde si la partie précédente s'est déclenchée
-
-            # In-zone-handler   
-            if self.our_len != 0 and self.our_head in self.zone_loc:
-                for g in self.zone_loc:
-                    if g == self.our_head or g in self.our_loc or g in self.opponent_loc:
-                        continue
-                    self.target = list(g)
-                    break
-                if not self.target: # Si toutes les cases de zone sont occupées
-                    self.target = self.zone_loc[0]
-
-            # Determinig next target (basic case):
-            else:
-                weight_zone = 10**self.our_len - 4*d_zmin if self.our_len != 0 else -100000 #7 et 4 passagers => on priorise un passager à 2 de dist même si nous collé à la zone
-                # Three parameters to target a passenger: their distance, value and the distance with the opponent's head.
-                weight_passen = []
-                for w in range(len(passagers)):
-                    x = -1666*d_passen[w] + 10000 + 850*passen_value[w] + (d_oppo_passen[w]-d_passen[w])*3*1666 + 1/(d_passen[w]-0.99999) if d_passen[w] != 0 else -100000
-                    weight_passen.append(x)
-
-                # Détermination de la target
-                if weight_zone >= max(weight_passen):
-                    self.target = self.zone_min
-                else:
-                    self.target = passen_loc[weight_passen.index(max(weight_passen))]
 
 
         ''' Détermination des directions idéales'''
@@ -359,7 +331,7 @@ class Agent(BaseAgent):
         if not self.is_alone:
 
             def out_of_bounds(coordinates):
-                '''cette fonction prend en entrée les coordonnées d'une case, et renvoir True si la case est
+                '''Cette fonction prend en entrée les coordonnées d'une case, et renvoir True si la case est
                 hors des limites du terrain, False sinon'''
 
                 if coordinates[0] > self.game_width//self.cell_size or coordinates[0] < 0:
@@ -417,7 +389,7 @@ class Agent(BaseAgent):
 
         path = self.main_path()
         move = self.adapt_path(path)
-        #print(move)
+        
         if move:
             return move
         else:
