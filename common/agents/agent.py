@@ -2,8 +2,10 @@ from common.base_agent import BaseAgent
 from common.move import Move
 import random
 
-#128.179.154.221
-#127.0.0.1
+'''Groupe 39:
+- BERNET Théo 392857
+- LABAEYE Justin 400868'''
+
 class Agent(BaseAgent):
     '''Notre classe Agent comporte trois méthode:
     - get_move(), qui lance les autres méthodes et rend le mouvement final;
@@ -16,7 +18,6 @@ class Agent(BaseAgent):
     def main_path(self):
         '''Cette méthode est la première à être appelée: elle définie les variables utilisées dans l'ensemble
         du code, détermine la prochaine cible et trouve les "mouvements à faire" (ideal_directions) pour l'atteindre.'''
-
 
         ''' ------------------------Definition section:------------------------'''
 
@@ -97,7 +98,6 @@ class Agent(BaseAgent):
                 # opponent_loc a toutes les coordonnées des wagons de tous les adversaires (les coo ne sont pas "differenciées")
                 self.opponent_loc.extend([[i[0]//self.cell_size, i[1]//self.cell_size] for i in self.autre[k]["wagons"]])
                 self.opponent_head.append([self.autre[k]["position"][0]//self.cell_size,self.autre[k]["position"][1]//self.cell_size])
-            
             self.aura = []
             self.opp_cur_dir = []
             for m in range(len(self.autre)):
