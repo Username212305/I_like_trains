@@ -165,7 +165,7 @@ class Agent(BaseAgent):
             # On vise la tête adverse
             if self.autre[0]["alive"]:
                 tar = self.opponent_head[0]
-            else:
+            else: # On vise le milieu du terrain tant que l'adversaire est mort
                 tar = [self.game_width//(2*self.cell_size),self.game_height//(2*self.cell_size)]
 
             # On désactive l'esquive de l'aura et de la tête adverse
