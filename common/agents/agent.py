@@ -179,14 +179,17 @@ class Agent(BaseAgent):
 
 
         '''In-zone-handler'''
-        if self.our_len != 0 and self.our_head in self.zone_loc:
-            for i in self.zone_loc:
-                if i == self.our_head or i in self.our_loc or i in self.opponent_loc:
-                    continue
-                self.target = list(i)
-                break
-            if not self.target: # Si toutes les cases de zone sont occupées
-                self.target = self.zone_loc[0]
+        if self.our_len != 0 and d_zmin <= 3: # On cible la zone si il nous reste des passagers et que la zone est à moins de trois cases de distance
+            if self.our_head in self.zone_loc: # Gestion de zone (quand on est dedans)
+                for i in self.zone_loc:
+                    if i == self.our_head or i in self.our_loc or i in self.opponent_loc:
+                        continue
+                    self.target = list(i)
+                    break
+                if not self.target: # Si toutes les cases de zone sont occupées
+                    self.target = self.zone_loc[0]
+            else: # Le train est juste autour de la zone
+                self.target = self.zone_min
         
 
         '''Choix cas usuel'''
