@@ -161,7 +161,7 @@ class Agent(BaseAgent):
                 if not self.train["boost_cooldown_active"]:
                     return Move.DROP
                 return self.zone_min
-            
+
             # On vise la tête adverse
             if self.autre[0]["alive"]:
                 tar = self.opponent_head[0]
@@ -280,7 +280,6 @@ class Agent(BaseAgent):
         limites", et l'aura = certaines cases autour des têtes adverses)
 
         - 3 Return final'''
-
 
         '''Partie 1:'''
         if not ideal_directions == Move.DROP:
