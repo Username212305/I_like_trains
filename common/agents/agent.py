@@ -6,32 +6,22 @@ import random
 #127.0.0.1
 class Agent(BaseAgent):
 
-    ''' Beginning of the code:
-    We define the methods used to decide the move before the method get_move (see bellow).'''
-    '''TODO:
-    - Implémenter tactique d'esquive de la tête + efficace (situation du "L")
-    - Adaptation des formules de weight (value -, length + ET d_oppo_passen)
-    - Finir fonction looptrap
-    - Corriger bugs pour 3 adversaires
-    - Implémenter boost (/!\ cooldown)
-    - End_game_protocol()'''
-
-
+    ''' '''
     
     def main_path(self):
-        '''This method will determine the "main strategy": it will decide the next main "target",
-        and returns 2 directions (among up, down, left or right) corresponding to the moves the
-        train has to do in the future to reach it.'''
-
-        # Variable initialisée seulement en début de partie
+        '''Cette méthode est la première à être appelée: elle définie les variables utilisées dans l'ensemble
+        du code, détermine la prochaine cible et trouve les "mouvements à faire" (ideal_directions) pour l'atteindre.'''
 
 
-        # Dictionaries to convert the directions-string into something else
+        ''' ------------------------Definition section:------------------------'''
+
+        """ Dictionaires utilisés pour la convertion de nos données """
         self.dict_str_to_command = {"up":Move.UP, "down":Move.DOWN, "right":Move.RIGHT, "left":Move.LEFT}
         self.dict_str_to_values = {"up":(0,-1), "down":(0,1), "right":(1,0), "left":(-1,0)}
         self.dict_opposite_dir = {"up":"down","right":"left","down":"up","left":"right"}
 
-        """ Infos sur les Trains """
+
+        """ Infos sur tous les trains """
         self.autre = []
         self.autre_nicknames = []
         for i in self.all_trains.keys():
@@ -40,12 +30,13 @@ class Agent(BaseAgent):
             else:
                 self.autre.append(self.all_trains[i])
                 self.autre_nicknames.append(i)
-
+        # On check également si on est tout seul, auquel cas certaines parties du code sont adaptées
         self.is_alone = False
         if not self.autre:
             self.is_alone = True
 
-        """ Our own attributes"""
+
+        """ Infos sur notre train"""
         match self.train["direction"]:
             case [1,0]:
                 self.cur_dir = "right"
@@ -60,7 +51,7 @@ class Agent(BaseAgent):
         self.our_head = (self.train["position"][0]//self.cell_size , self.train["position"][1]//self.cell_size)
 
 
-        """ info sur delivery zone"""
+        """ Infos sur delivery zone"""
         self.zone_loc = [(self.delivery_zone["position"][0]//self.cell_size , self.delivery_zone["position"][1]//self.cell_size)] # zone_loc = [x,y] case de la zone de livraison
         znch = self.delivery_zone["height"]//self.cell_size # zone_nb_case_haut
         zncl = self.delivery_zone["width"]//self.cell_size # zone_nb_case_large
@@ -83,7 +74,6 @@ class Agent(BaseAgent):
                             for x in range(1,zncl):
                                 self.zone_loc.append((self.zone_loc[0][0] + x,self.zone_loc[0][1] + y)) # à voir si le dernier cas suffit pas, histoire de faire propre
 
-        """d_zone elaborée"""
         d_zmin = abs(self.zone_loc[0][0] - self.our_head[0]) + abs(self.zone_loc[0][1] - self.our_head[1]) # distance zone de livraison case origine
         self.zone_min = self.zone_loc[0]
         for i,c in enumerate(self.zone_loc):
@@ -92,6 +82,7 @@ class Agent(BaseAgent):
                 d_zmin = d
                 self.zone_min = self.zone_loc[i] # case de zone la plus proche de nous
         
+
         """ Infos sur l(es) autre(s)"""
         if not self.is_alone:
             self.opp_len = []
@@ -140,7 +131,8 @@ class Agent(BaseAgent):
                                     [self.opponent_head[m][0]-1,self.opponent_head[m][1]],
                                     [self.opponent_head[m][0]+1,self.opponent_head[m][1]]])
 
-        """ info sur passagers"""
+
+        """ Infos sur les passagers"""
         passagers = self.passengers
         passen_loc = []
         passen_value = []
@@ -155,6 +147,11 @@ class Agent(BaseAgent):
                 all_distances_passen_oppo.append(abs(passen_loc[j][0] - head[0]) + abs(passen_loc[j][1] - head[1]))
             d_oppo_passen.append(min(all_distances_passen_oppo)) # correspond aux distances minimales de chaque passager avec l'adversaire le plus proche d'eux
         
+
+
+        ''' ------------------------Deciding section:------------------------'''
+        self.target = None
+
         def code_47():
             '''Cette fonction est appellée lorsque l'écart de best score avec l'adversaire est assez grand:
             la stratégie consiste alors à tuer l'adversaire en boucle en fonçant sur sa tête.'''
@@ -180,9 +177,6 @@ class Agent(BaseAgent):
 
             return tar
 
-        
-        ''' ------------------------Deciding section:------------------------'''
-        self.target = None
 
         '''In-zone-handler'''
         if self.our_len != 0 and self.our_head in self.zone_loc:
@@ -195,8 +189,8 @@ class Agent(BaseAgent):
                 self.target = self.zone_loc[0]
         
 
-            '''Choice in basic case'''
-        else:
+        '''Choix cas usuel'''
+        if not self.target:
             weight_zone = 7**self.our_len - d_zmin if self.our_len != 0 else -100000 #7 et 4 passagers => on priorise un passager à 2 de dist même si nous collé à la zone
             # Three parameters to target a passenger: their distance, value and the distance with the opponent's head.
             weight_passen = []
@@ -210,16 +204,15 @@ class Agent(BaseAgent):
             else:
                 self.target = passen_loc[weight_passen.index(max(weight_passen))]
 
-
             
         '''Code_47 check:'''
         # On regarde si le code_47 est déjà en train de run
         try:
             if self.code_47_running:
-                ecart = 5 # Si c'est le cas, on réduit l'écart de score avec l'adversaire pour le déclencher à 5
+                ecart = 5 # Si c'est le cas, on réduit l'écart min de score avec l'adversaire pour déclencher le code à 5
             else:
-                ecart = 15
-        except: # Au tout premier lancement de get_move, code_47_running n'existe pas: on l'initialise à False
+                ecart = 15 # Sinon (cas usuel) l'écart min est de 15
+        except: # Au tout premier lancement de get_move, code_47_running n'existe pas: on l'initialise alors à False
             self.code_47_running = False
             ecart = 15
 
@@ -229,7 +222,7 @@ class Agent(BaseAgent):
             if self.best_scores.get(self.autre_nicknames[0]):
                 oppo_best_score = self.best_scores[self.autre_nicknames[0]]
             else:
-                oppo_best_score = 0
+                oppo_best_score = 0 # Si ce n'est pas le cas, l'adversaire n'a encore marqué aucun point
 
             if self.best_scores[self.nickname]  > oppo_best_score + ecart:
                 self.target = code_47()
@@ -238,9 +231,10 @@ class Agent(BaseAgent):
                 self.code_47_running = False
 
 
-        """ Détermination des directions idéales """
+        ''' Détermination des directions idéales'''
         if self.target == Move.DROP:
             return Move.DROP
+        
         elif self.our_head[0] - self.target[0] < 0:
             if self.our_head[1] - self.target[1] < 0:
                 ideal_directions = ("right","down")
@@ -248,6 +242,7 @@ class Agent(BaseAgent):
                 ideal_directions = ("right","up")
             else: # our_head[1] - target[1] == 0
                 ideal_directions = ("right",None)
+
         elif self.our_head[0] - self.target[0] > 0:
             if self.our_head[1] - self.target[1] < 0:
                 ideal_directions = ("left","down")
@@ -255,6 +250,7 @@ class Agent(BaseAgent):
                 ideal_directions = ("left","up")
             else:
                 ideal_directions = ("left",None)
+
         else: # our_head[0] - target[0] == 0
             if self.our_head[1] - self.target[1] < 0:
                 ideal_directions = ("down",None)
@@ -262,64 +258,67 @@ class Agent(BaseAgent):
                 ideal_directions = ("up",None)
      
         return ideal_directions
+        
         # FIN DE MAIN_PATH
     
 
     def adapt_path(self, ideal_directions): 
-        '''This method is used to change / chose among the directions given by main_path
-        if there is a "danger" on the way. It will have the "last word" to decide which
-        way to go. Convert the "directions"-2-elements tuple (among "up", "down", "right",
-        "left" and / or None) into the command of the chosen move.
+        '''Cette fonction est appelée pour trouver les directions qu'il est possible de faire parmi celles rendues
+        par main_path (et les placer comme "prioritaires"), et vérifier si chacune des directions qu'il est
+        possible de faire est dangereuse ou non, auquel cas on la supprime de notre liste de choix. Cette méthode
+        est subdivisée en 3 parties:
         
         - 1 Déterminer parmis les deux directions données, si il y en a une "prioritaire" (e.t. si une
-        des directions (ou LA direction) donné.e.s est derrière nous, et donc inateignable en 1 action) ET
-        déterminer la (les) direction(s) de secour(s) (au cas où les directions souhaitées seraient dangereuses).
+        des directions (ou la direction) donnée.s est(sont) derrière.s nous, et donc inateignable.s en 1 action) et
+        déterminer la (les) direction(s) de secour(s) (au cas où toutes les directions "souhaitées" seraient dangereuses).
 
-        - 2 Danger imminent: Evaluer le danger de chacune des direction possible ("directions"
-        ET "other_directions") et remplacer par "None" celles qui sont dangereuses.
+        - 2 Danger imminent: Evalue le danger de chacune des directions possibles ("directions" et "other_directions")
+        et remplacer par "None" celles qui sont dangereuses. (cases "dangereuses": les têtes, les wagons, les cases "hors
+        limites", et l'aura = certaines cases autour des têtes adverses)
 
-        - 3 Danger futur: fonction permettant d'éviter le "piège de la boucle" (train qui s'enroule sur lui même)
+        - 3 Return final'''
 
-        - 4 Return final
-        '''
-        # Partie 1: Direction prioritaire + Déterminer les "autres directions", soient les directions "possibles"
-        # mais pas prioritaires (pas de return ici) 
+
+        '''Partie 1:'''
         if not ideal_directions == Move.DROP:
-            if self.cur_dir not in ideal_directions: # Means there can be only one of the "good" directions we can go
+            if self.cur_dir not in ideal_directions: # Signifie qu'il ne peut y avoir max qu'une direction ideale qui soit possible de faire
                 
-                if ideal_directions[1] is not None: # != None, means the target is on a diagonal (two directions "wanted")
+                if ideal_directions[1]: # Signifie qu'il y a deux directions idéales: la target est sur une diagonale
+
                     if ideal_directions[0] == self.dict_opposite_dir[self.cur_dir]:
-                        other_directions = [self.cur_dir, self.dict_opposite_dir[ideal_directions[1]]] # Les deux autres directions possibles
+                        other_directions = [self.cur_dir, self.dict_opposite_dir[ideal_directions[1]]]
                         directions = [ideal_directions[1], None]
-                    else: # directions[1] == dict_opposite_dir[self.cur_dir]
+                    else:
                         other_directions = [self.cur_dir, self.dict_opposite_dir[ideal_directions[0]]]
                         directions = [ideal_directions[0], None]
                 
-                else: # Two possibilities: the target is next to us, or behind us (both on "strait line")
-                    if self.cur_dir == self.dict_opposite_dir[ideal_directions[0]]: # It's behind us: we have to go back
+                else: # Une seule direction idéale: la cible est sur une ligne droite
+                    if self.cur_dir == self.dict_opposite_dir[ideal_directions[0]]: # La cible est derrière nous
                         other_directions = [self.cur_dir, None]
                         if self.cur_dir == "up" or self.cur_dir == "down":
                             directions = ["right","left"]
                         else:
                             directions = ["up","down"]
-                    else: # We don't change the tuple "directions", as we can go there: just have to change "other_directions"
+                    else: # La cible est devant nous, ou sur un côté
                         directions = list(ideal_directions)
                         other_directions = [self.cur_dir, self.dict_opposite_dir[ideal_directions[0]]]
 
-            else: # Means that we can go in (both) direction(s) and that we are already going the right way
-                if ideal_directions[1]: # Target on diagonal
+            else: # Nous allons déjà dans une direction idéale
+                if ideal_directions[1]: # Deux directions idéales: la cible est sur une diagonale 
                     directions = list(ideal_directions)
                     if self.cur_dir == ideal_directions[0]:
                         other_directions = [self.dict_opposite_dir[ideal_directions[1]], None]
                         
-                    else: # self.cur_dir == directions[1]
+                    else: # Notre direction actuelle est directions[1]
                         other_directions = [self.dict_opposite_dir[ideal_directions[0]], None]
-                else: # If target is not on a diagonal, it means we're rushing toward it
+
+                else: # Target n'est pas sur une diagonale: nous allons droit vers elle
                     directions = [ideal_directions[0], None]    
                     if self.cur_dir == "up" or self.cur_dir == "down":
                         other_directions = ["right","left"]
                     else:
-                        other_directions = ["up","down"] 
+                        other_directions = ["up","down"]
+    
         else: # On veut drop un passager
             directions = [self.cur_dir, None]
             if self.cur_dir == "up" or self.cur_dir == "down":
@@ -327,67 +326,66 @@ class Agent(BaseAgent):
             else:
                 other_directions = ["up","down"] 
         
-        # Partie 2: Danger imminent (pas de return: check "danger potentiel" avant?)
-        # We have to check both directions, starting by the first given by the variable "directions"
-        # The priority direction:
+
+        '''Partie 2: '''
         if not self.is_alone:
+
             def out_of_bounds(coordinates):
+                '''cette fonction prend en entrée les coordonnées d'une case, et renvoir True si la case est
+                hors des limites du terrain, False sinon'''
+
                 if coordinates[0] > self.game_width//self.cell_size or coordinates[0] < 0:
                     return True
                 if coordinates[1] > self.game_height//self.cell_size or coordinates[1] < 0:
                     return True
                 return False
             
-            for i in range(2): # First, let's check directions
-                if not directions[i]: # == None
+            for i in range(2): # Check de directions (prioritaires)
+                if not directions[i]:
                     continue
                 next_loc = [self.our_head[0] + self.dict_str_to_values[directions[i]][0], self.our_head[1] + self.dict_str_to_values[directions[i]][1]]
                 if  next_loc in self.opponent_loc  or  next_loc in self.our_loc  or  next_loc in self.aura  or  out_of_bounds(next_loc) or next_loc in self.opponent_head:
                     directions[i] = None
-                    # Then we want the other priority direction, or if it doesn't exist, one of other_directions
-            for j in range(2): # Now, let's check other_directions
-                if not other_directions[j]: # == None
+
+            for j in range(2): # Check de other-directions
+                if not other_directions[j]:
                     continue
                 next_loc = [self.our_head[0] + self.dict_str_to_values[other_directions[j]][0], self.our_head[1] + self.dict_str_to_values[other_directions[j]][1]]
                 if next_loc in self.opponent_loc  or  next_loc in self.our_loc  or  next_loc in self.aura  or  out_of_bounds(next_loc) or next_loc in self.opponent_head:
                     other_directions[j] = None
-                    # Then we want the other priority direction, or if it doesn't exist, one of other_directions
 
-        '''print zone'''
-        print("---------------")
-        print("target: ",self.target, " | ", "cur_dir: ",self.cur_dir, " | ", "our_head: ", self.our_head)
-        print("ideal_directions: ", ideal_directions, " | ","directions: ",directions, " | ", "other_directions: ", other_directions)
-        print("aura: ",self.aura, " | ", "Opponent head: ", self.opponent_head)
-        print("opponent_loc: ",self.opponent_loc, " | ", "our_loc: ",self.our_loc)
         
-        # Return part (if no return before)
-        r = random.randint(0,1)
-        if directions[0]: # != None: means there is still a priority direction available
+
+        ''' Partie 3: Return part'''
+        r = random.randint(0,1) # Facteur aléatoire, utilisé si les deux directions d'une catégories sont possibles
+        if directions[0]:
             if ideal_directions == Move.DROP:
                 return Move.DROP
             elif directions[1]:
                 return self.dict_str_to_command[directions[r]]
             else:
                 return self.dict_str_to_command[directions[0]]
-        elif directions[1]: 
+        
+        if directions[1]: 
             return self.dict_str_to_command[directions[1]]
         
-        else: # There is no "best" direction available, we have to escape in another
-            if other_directions[0]:
-                if other_directions[1]:
-                    return self.dict_str_to_command[other_directions[r]]
-                else:
-                    return self.dict_str_to_command[other_directions[0]]
+        # Il n'y a plus de direction prioritaire possible: il faut prendre une direction de secours
+        if other_directions[0]:
+            if other_directions[1]:
+                return self.dict_str_to_command[other_directions[r]]
             else:
-                return self.dict_str_to_command[other_directions[1]]
+                return self.dict_str_to_command[other_directions[0]]
+        
+        # Dernier return, si tous les autres sont "None". On ne le vérifie pas puisque de toute façon on meurt si il est None.
+        return self.dict_str_to_command[other_directions[1]]
 
 
     def get_move(self):
         '''get_move appelle les autres méthodes de la classe agent. Si jamais adapt_path a éliminé tous les
-        mouvements "possibles" (car danger imminent / potentiel partout), on relance une itération de la méthode
-        en désactivant l'aura pour essayer de rendre un mouvement "possible" (dans le cas où l'on se trouverait à
-        proximité de la tête adverse), et ainsi nous laisser une chance de survivre ou de tuer l'adversaire avec
-        nous.'''
+        mouvements "possibles" (car danger imminent sur tous les mouvements possibles), on relance une itération de
+        la méthode en désactivant l'aura pour essayer de rendre un mouvement "possible" (dans le cas où l'on se
+        trouverait à proximité de la tête adverse), et ainsi nous laisser une chance de survivre ou de tuer
+        l'adversaire avec nous.'''
 
         path = self.main_path()
         move = self.adapt_path(path)
@@ -395,4 +393,5 @@ class Agent(BaseAgent):
             return move
         else:
             self.aura = []
+            self.opponent_head = []
             return self.adapt_path(path)
