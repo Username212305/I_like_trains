@@ -13,7 +13,7 @@ class Agent(BaseAgent):
     - Adaptation des formules de weight (value -, length + ET d_oppo_passen)
     - Finir fonction looptrap
     - Corriger bugs pour 3 adversaires
-    - Implémenter boost (/!\ cooldown)
+    - Implémenter boost 
     - End_game_protocol()'''
 
 
@@ -24,7 +24,7 @@ class Agent(BaseAgent):
         train has to do in the future to reach it.'''
 
         # Dictionaries to convert the directions-string into something else
-        self.dict_str_to_command = {"up":Move.UP, "down":Move.DOWN, "right":Move.RIGHT, "left":Move.LEFT}
+        self.dict_str_to_command = {"up":Move.UP, "down":Move.DOWN, "right":Move.RIGHT, "left":Move.LEFT, None:None}
         self.dict_str_to_values = {"up":(0,-1), "down":(0,1), "right":(1,0), "left":(-1,0)}
         self.dict_opposite_dir = {"up":"down","right":"left","down":"up","left":"right"}
 
@@ -91,7 +91,7 @@ class Agent(BaseAgent):
         
         """ Infos sur l(es) autre(s)"""
         if not self.is_alone:
-            self.opp_len = []
+            self.opp_len = [] #ça sert à rien non ?
             self.opponent_loc = []
             self.opponent_head = []
             for k in range(len(self.autre)):
@@ -230,7 +230,7 @@ class Agent(BaseAgent):
 
         # Determinig next target (basic case):
         else:
-            weight_zone = 10**self.our_len - 5*d_zmin if self.our_len != 0 else -100000 
+            weight_zone = 10**self.our_len - 4*d_zmin if self.our_len != 0 else -100000 
             # Three parameters to target a passenger: their distance, value and the distance with the opponent's head.
             weight_passen = []
             for w in range(len(passagers)):
@@ -283,7 +283,7 @@ class Agent(BaseAgent):
 
             # Determinig next target (basic case):
             else:
-                weight_zone = 10**self.our_len - 5*d_zmin if self.our_len != 0 else -100000 #7 et 4 passagers => on priorise un passager à 2 de dist même si nous collé à la zone
+                weight_zone = 10**self.our_len - 4*d_zmin if self.our_len != 0 else -100000 #7 et 4 passagers => on priorise un passager à 2 de dist même si nous collé à la zone
                 # Three parameters to target a passenger: their distance, value and the distance with the opponent's head.
                 weight_passen = []
                 for w in range(len(passagers)):
@@ -396,18 +396,17 @@ class Agent(BaseAgent):
                 if coordinates[1] > self.game_height//self.cell_size or coordinates[1] < 0:
                     return True
                 return False
-            
             for i in range(2): # First, let's check directions
                 if not directions[i]: # == None
                     continue
-                next_loc = [(self.our_head[0] + self.dict_str_to_values[directions[i]][0]), (self.our_head[1] + self.dict_str_to_values[directions[i]][1])]
+                next_loc = [self.our_head[0] + self.dict_str_to_values[directions[i]][0] , self.our_head[1] + self.dict_str_to_values[directions[i]][1]]
                 if  next_loc in self.opponent_loc  or  next_loc in self.our_loc  or  next_loc in self.aura  or  out_of_bounds(next_loc) or next_loc in self.opponent_head:
                     directions[i] = None
                     # Then we want the other priority direction, or if it doesn't exist, one of other_directions
             for j in range(2): # Now, let's check other_directions
                 if not other_directions[j]: # == None
                     continue
-                next_loc = [(self.our_head[0] + self.dict_str_to_values[other_directions[j]][0]), (self.our_head[1] + self.dict_str_to_values[other_directions[j]][1])]
+                next_loc = [self.our_head[0] + self.dict_str_to_values[other_directions[j]][0] , self.our_head[1] + self.dict_str_to_values[other_directions[j]][1]]
                 if next_loc in self.opponent_loc  or  next_loc in self.our_loc  or  next_loc in self.aura  or  out_of_bounds(next_loc) or next_loc in self.opponent_head:
                     other_directions[j] = None
                     # Then we want the other priority direction, or if it doesn't exist, one of other_directions
@@ -448,11 +447,11 @@ class Agent(BaseAgent):
             return False
 
         '''print zone'''
-        #print("---------------")
-        #print("target: ",self.target, " | ", "cur_dir: ",self.cur_dir, " | ", "our_head: ", self.our_head)
-        #print("ideal_directions: ", ideal_directions, " | ","directions: ",directions, " | ", "other_directions: ", other_directions)
-        #print("aura: ",self.aura)
-        #print("opponent_loc: ",self.opponent_loc, " | ", "our_loc: ",self.our_loc)
+        print("---------------")
+        print("target: ",self.target, " | ", "cur_dir: ",self.cur_dir, " | ", "our_head: ", self.our_head)
+        print("ideal_directions: ", ideal_directions, " | ","directions: ",directions, " | ", "other_directions: ", other_directions)
+        print("aura: ",self.aura, "next_loc: ", next_loc)
+        print("opponent_loc: ",self.opponent_loc, " | ", "our_loc: ",self.our_loc)
         
         
         r = random.randint(0,1) # Facteur aléatoire, si les deux mouvements d'une catégorie sont possible
@@ -462,44 +461,43 @@ class Agent(BaseAgent):
                 return Move.DROP
             if directions[1]:
                 #Loop trap check
-                if directions[r] != self.cur_dir: # On active loop_trap seulement si on ne peut pas aller tout droit (cas fréquent)
-                    if not loop_trap(directions[r]):
-                        return self.dict_str_to_command[directions[r]]
+                #if directions[r] != self.cur_dir: # On active loop_trap seulement si on ne peut pas aller tout droit (cas fréquent)
+                    #if not loop_trap(directions[r]):
+                    return self.dict_str_to_command[directions[r]]
                     # Else: on continue à check
                     
-                else: # On laisse passer si directions[r] va tout droit
-                    return self.dict_str_to_command[directions[r]]
+                #else: # On laisse passer si directions[r] va tout droit
+                    #return self.dict_str_to_command[directions[r]]
             else:
+                return self.dict_str_to_command[directions[0]]
                 #Loop trap check
                 if directions[0] != self.cur_dir: # On active loop_trap seulement si on ne peut pas aller tout droit (cas fréquent)
                     if not loop_trap(directions[0]):
                         return self.dict_str_to_command[directions[0]]
                     # Else: on continue à check
-        if directions[1]:
+        elif directions[1]:
             #Loop trap check
-            if directions[1] != self.cur_dir: # On active loop_trap seulement si on ne peut pas aller tout droit (cas fréquent)
-                if not loop_trap(directions[1]):
-                    return self.dict_str_to_command[directions[1]]
-                # Else: on continue à check
-            else:
+            #if directions[1] != self.cur_dir: # On active loop_trap seulement si on ne peut pas aller tout droit (cas fréquent)
+                #if not loop_trap(directions[1]):
                 return self.dict_str_to_command[directions[1]]
+                # Else: on continue à check
         
         # Il n'y a plus de direction "prioritaire": on doit fuir ailleurs
-        if other_directions[0]:
+        elif other_directions[0]:
             if other_directions[1]:
                 #Loop trap check
-                if other_directions[r] != self.cur_dir: # On active loop_trap seulement si on ne peut pas aller tout droit (cas fréquent)
-                    if not loop_trap(directions[r]):
+                #if other_directions[r] != self.cur_dir: # On active loop_trap seulement si on ne peut pas aller tout droit (cas fréquent)
+                    #if not loop_trap(directions[r]):
                         return self.dict_str_to_command[directions[r]]
                     # Else: on continue à check
-                else:
-                    return self.dict_str_to_command[other_directions[r]]
-                
-            # Il n'y a plus qu'une direction possible (other_directions[0] ou [1]) ou aucune (return None)
             else:
                 return self.dict_str_to_command[other_directions[0]]
+                
+            # Il n'y a plus qu'une direction possible (other_directions[0] ou [1]) ou aucune (return None)
+        elif other_directions[1]:
+                    return self.dict_str_to_command[other_directions[1]]
         else:
-            return self.dict_str_to_command[other_directions[1]]
+            return self.dict_str_to_command[other_directions[0]]
 
 
     def get_move(self):
@@ -511,6 +509,7 @@ class Agent(BaseAgent):
 
         path = self.main_path()
         move = self.adapt_path(path)
+        #print(move)
         if move:
             return move
         else:
