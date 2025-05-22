@@ -23,6 +23,9 @@ class Agent(BaseAgent):
         and returns 2 directions (among up, down, left or right) corresponding to the moves the
         train has to do in the future to reach it.'''
 
+        # Variable initialisée seulement en début de partie
+
+
         # Dictionaries to convert the directions-string into something else
         self.dict_str_to_command = {"up":Move.UP, "down":Move.DOWN, "right":Move.RIGHT, "left":Move.LEFT}
         self.dict_str_to_values = {"up":(0,-1), "down":(0,1), "right":(1,0), "left":(-1,0)}
@@ -163,28 +166,25 @@ class Agent(BaseAgent):
                 return self.zone_min
             
             # On vise la tête adverse
-            tar = self.opponent_head
+            if self.autre[0]["alive"]:
+                tar = self.opponent_head[0]
+            else:
+                tar = [self.game_width//(2*self.cell_size),self.game_height//(2*self.cell_size)]
 
             # On désactive l'esquive de l'aura et de la tête adverse
             self.aura = []
-            self.opponent_head = None
+            self.opponent_head = []
 
             # On évite les passagers
             self.opponent_loc.extend(passen_loc)
 
             return tar
 
-
-        ''' Beginning of the method: we'll compact the parameters into two variables: one for each
-        "target a passenger" choice, and one for the "target zone" choice.'''
         
-        # Deciding section:
-        # In-zone handler, in case we are in the zone and still need to let passengers:
-        # We call a variable "d" to gain space: its the distance on (x, y) between the first corner point
-        # of the zone and us
+        ''' ------------------------Deciding section:------------------------'''
         self.target = None
 
-        # In-zone-handler
+        '''In-zone-handler'''
         if self.our_len != 0 and self.our_head in self.zone_loc:
             for i in self.zone_loc:
                 if i == self.our_head or i in self.our_loc or i in self.opponent_loc:
@@ -193,8 +193,9 @@ class Agent(BaseAgent):
                 break
             if not self.target: # Si toutes les cases de zone sont occupées
                 self.target = self.zone_loc[0]
+        
 
-        # Determinig next target (basic case):
+            '''Choice in basic case'''
         else:
             weight_zone = 7**self.our_len - d_zmin if self.our_len != 0 else -100000 #7 et 4 passagers => on priorise un passager à 2 de dist même si nous collé à la zone
             # Three parameters to target a passenger: their distance, value and the distance with the opponent's head.
@@ -211,7 +212,17 @@ class Agent(BaseAgent):
 
 
             
-        # Code_47 check:
+        '''Code_47 check:'''
+        # On regarde si le code_47 est déjà en train de run
+        try:
+            if self.code_47_running:
+                ecart = 5 # Si c'est le cas, on réduit l'écart de score avec l'adversaire pour le déclencher à 5
+            else:
+                ecart = 15
+        except: # Au tout premier lancement de get_move, code_47_running n'existe pas: on l'initialise à False
+            self.code_47_running = False
+            ecart = 15
+
         # On vérifie qu'il y a un seul adversaire, puis que best scores a été initialisé, pour ne pas avoir d'erreur ensuite
         if len(self.autre_nicknames) == 1 and self.best_scores.get(self.nickname):
             # Check si best score adverse a été initialisé
@@ -220,8 +231,11 @@ class Agent(BaseAgent):
             else:
                 oppo_best_score = 0
 
-            if self.best_scores[self.nickname]  > oppo_best_score + 15:
+            if self.best_scores[self.nickname]  > oppo_best_score + ecart:
                 self.target = code_47()
+                self.code_47_running = True
+            else:
+                self.code_47_running = False
 
 
         """ Détermination des directions idéales """
@@ -232,7 +246,7 @@ class Agent(BaseAgent):
                 ideal_directions = ("right","down")
             elif self.our_head[1] - self.target[1] > 0:
                 ideal_directions = ("right","up")
-            else:                # our_head[1] - target[1] == 0
+            else: # our_head[1] - target[1] == 0
                 ideal_directions = ("right",None)
         elif self.our_head[0] - self.target[0] > 0:
             if self.our_head[1] - self.target[1] < 0:
@@ -241,10 +255,10 @@ class Agent(BaseAgent):
                 ideal_directions = ("left","up")
             else:
                 ideal_directions = ("left",None)
-        else:                     # our_head[0] - target[0] == 0
+        else: # our_head[0] - target[0] == 0
             if self.our_head[1] - self.target[1] < 0:
                 ideal_directions = ("down",None)
-            else:                 # our_head[1] - target[1] > 0
+            else: # our_head[1] - target[1] > 0
                 ideal_directions = ("up",None)
      
         return ideal_directions
@@ -327,14 +341,14 @@ class Agent(BaseAgent):
             for i in range(2): # First, let's check directions
                 if not directions[i]: # == None
                     continue
-                next_loc = [(self.our_head[0] + self.dict_str_to_values[directions[i]][0]), (self.our_head[1] + self.dict_str_to_values[directions[i]][1])]
+                next_loc = [self.our_head[0] + self.dict_str_to_values[directions[i]][0], self.our_head[1] + self.dict_str_to_values[directions[i]][1]]
                 if  next_loc in self.opponent_loc  or  next_loc in self.our_loc  or  next_loc in self.aura  or  out_of_bounds(next_loc) or next_loc in self.opponent_head:
                     directions[i] = None
                     # Then we want the other priority direction, or if it doesn't exist, one of other_directions
             for j in range(2): # Now, let's check other_directions
                 if not other_directions[j]: # == None
                     continue
-                next_loc = [(self.our_head[0] + self.dict_str_to_values[other_directions[j]][0]), (self.our_head[1] + self.dict_str_to_values[other_directions[j]][1])]
+                next_loc = [self.our_head[0] + self.dict_str_to_values[other_directions[j]][0], self.our_head[1] + self.dict_str_to_values[other_directions[j]][1]]
                 if next_loc in self.opponent_loc  or  next_loc in self.our_loc  or  next_loc in self.aura  or  out_of_bounds(next_loc) or next_loc in self.opponent_head:
                     other_directions[j] = None
                     # Then we want the other priority direction, or if it doesn't exist, one of other_directions
@@ -381,7 +395,7 @@ class Agent(BaseAgent):
         print("---------------")
         print("target: ",self.target, " | ", "cur_dir: ",self.cur_dir, " | ", "our_head: ", self.our_head)
         print("ideal_directions: ", ideal_directions, " | ","directions: ",directions, " | ", "other_directions: ", other_directions)
-        print("aura: ",self.aura)
+        print("aura: ",self.aura, " | ", "Opponent head: ", self.opponent_head)
         print("opponent_loc: ",self.opponent_loc, " | ", "our_loc: ",self.our_loc)
         
         
